@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-
-CFLAGS="-I../src" LDFLAGS="-L../src" python setup.py build_ext -i
+pip install cython
+CFLAGS="-I../src" LDFLAGS="-L../src ../usrsctp/usrsctplib/.libs" python setup.py build_ext -i
