@@ -18,10 +18,13 @@ else
 	TARGET=lib$(NAME).so
 endif
 
-all:  $(SOURCES) $(TARGET)
+all:  $(SOURCES) $(TARGET) main.c
 
 deps: 
 	cd usrsctp && ./bootstrap && ./configure && make && cd ..
+
+main.c: $(TARGET)
+	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -shared -fPIC $(LDFLAGS) $(OBJECTS) -o $@
@@ -30,5 +33,8 @@ $(TARGET): $(OBJECTS)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.o *.so *.dylib *.a example && cd usrsctp && make clean && cd .. 
+	rm -f *.o *.so *.dylib *.a example && cd usrsctp && make clean && cd ..
+
+test: main.c
+	LD_LIBRARY_PATH=usrsctp/usrsctplib/.libs/:./ ./main
 
