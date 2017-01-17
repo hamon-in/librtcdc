@@ -29,14 +29,26 @@ int main() {
     struct rtcdc_peer_connection *rtcdc_pc;
 
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
-        printf("\nConnected\n");
+        printf("\nPeer Connection Established.\n");
+    }
+    void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
+        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "test", strlen("test"));
+        printf("\nData received: %s\n", data);
     }
     void onchannel(struct rtcdc_peer_connection *peer, struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nChannel created: %s\n", channel->label); 
-        //on message send sth
+        channel->on_message = onmessage;
     }
     void oncandidate(struct rtcdc_peer_connection *peer, const char *candidate, void *user_data) {
-        //printf("\nCandidate found: %s\n", candidate);
+        printf("\nCandidate found:\n%s\n", g_base64_encode(candidate, strlen(candidate)));
+    }
+
+    void onopen(struct rtcdc_data_channel *channel, void *user_data) {
+        printf("\nDataChannel opened!\n");
+    }
+    
+    void onclose(struct rtcdc_data_channel *channel, void *user_data) {
+        printf("\nDataChannel closed!\n");
     }
 
     void *user_data;
@@ -50,9 +62,10 @@ int main() {
     gchar *b_offer, *b_lCSDP;
     b_offer = g_base64_encode(offer, strlen(offer));
     printf("\nOffer SDP: \n%s\n", b_offer);
+    
     b_lCSDP = g_base64_encode(lCSDP, strlen(lCSDP));
     printf("\nLocal Candidate: \n%s\n", b_lCSDP);
-    //sleep(3);
+    sleep(3);
     int parse_offer, parse_candidate;
     guchar *dec_remote_sdp_offer, *dec_remote_candidate;
     gsize dec_remote_sdp_len = 0, dec_candidate_len;
@@ -64,7 +77,7 @@ int main() {
     printf("\nDecoded remote SDP:\n%s\n", dec_remote_sdp_offer);
     parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, dec_remote_sdp_offer);
     if (parse_offer >= 0) {
-        offer = rtcdc_generate_offer_sdp(rtcdc_pc); //new one (to be sent to peer)
+        offer = rtcdc_generate_offer_sdp(rtcdc_pc);
         b_offer = g_base64_encode(offer, strlen(offer));
         printf("\nNew Offer SDP: \n%s\n", b_offer);
     } else {
@@ -77,19 +90,14 @@ int main() {
     dec_remote_candidate = g_base64_decode(remote_candidate, &dec_candidate_len);
     printf("\nDecoded remote candidate:\n%s\n", dec_remote_candidate);
     
-    //if (dec_remote_sdp_offer[(int) dec_remote_sdp_len] != '\0') {
-    //    dec_remote_sdp_offer[(int) dec_remote_sdp_len] = '\0';
-    //} ...
     parse_candidate = rtcdc_parse_candidate_sdp(rtcdc_pc, dec_remote_candidate);
-    //printf("\nParse SDP offer result: %d\n", parse_offer);
-    //printf("\nParse candidate result: %d\n", parse_candidate);
     if (parse_candidate > 0) {
-        // valid
         printf("\nValid candidates!\n");
     } else {
         printf("\nInvalid candidates!\n");
         _exit(1);
     }
+    rtcdc_loop(rtcdc_pc);
     g_free(dec_remote_sdp_offer);
     g_free(dec_remote_candidate);
     return 0;
