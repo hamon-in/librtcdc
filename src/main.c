@@ -27,14 +27,21 @@ gchar* getlines() {
 
 int main() {
     struct rtcdc_peer_connection *rtcdc_pc;
-
-    void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
-        printf("\nPeer Connection Established.\n");
-    }
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
-        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "test", strlen("test"));
         printf("\nData received: %s\n", data);
     }
+    void onopen(struct rtcdc_data_channel *channel, void *user_data) {
+        printf("\nDataChannel opened, Sending a test message.\n");
+        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "test", strlen("test"));
+    }
+    void onclose(struct rtcdc_data_channel *channel, void *user_data) {
+        printf("\nDataChannel closed!\n");
+    }
+    void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
+        printf("\nPeer Connection Established.\n");
+        rtcdc_create_data_channel(peer, "test-dc", "", onopen, onmessage, onclose, user_data);
+    }
+    
     void onchannel(struct rtcdc_peer_connection *peer, struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nChannel created: %s\n", channel->label); 
         channel->on_message = onmessage;
@@ -43,13 +50,7 @@ int main() {
         printf("\nCandidate found:\n%s\n", g_base64_encode(candidate, strlen(candidate)));
     }
 
-    void onopen(struct rtcdc_data_channel *channel, void *user_data) {
-        printf("\nDataChannel opened!\n");
-    }
     
-    void onclose(struct rtcdc_data_channel *channel, void *user_data) {
-        printf("\nDataChannel closed!\n");
-    }
 
     void *user_data;
     printf("\nCreating peer connection...\n");
