@@ -6,3 +6,5 @@ python/build/*
 python/*.dylib
 python/pyrtcdc.c
 python/*.so
+.built
+vendor/

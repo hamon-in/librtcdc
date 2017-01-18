@@ -3,7 +3,7 @@
 # This file is licensed under a BSD license.
 
 CFLAGS+=-Wl,--no-as-needed -g -O2 -DINET -DINET6 -DDEBUG_SCTP -fPIC -Wno-deprecated `pkg-config --cflags openssl nice` -I usrsctp/usrsctplib -std=gnu11
-LDFLAGS+=`pkg-config --libs openssl` -L ./build -lnice -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lusrsctp -lpthread 
+LDFLAGS+=`pkg-config --libs openssl` -L ./vendor/build -lnice -lgio-2.0 -lgobject-2.0 -lglib-2.0 -lusrsctp -lpthread 
 SOURCES=util.c dtls.c sctp.c ice.c sdp.c dcep.c rtcdc.c
 OBJECTS=$(SOURCES:.c=.o)
 NAME=rtcdc
@@ -20,33 +20,43 @@ endif
 
 all:  $(SOURCES) $(TARGET) main
 
-.PHONY: clean
+.PHONY: clean deps
 
-USRSCTP = ./usrsctp/usrsctplib/.libs/libusrsctp.so
-LIBNICE = ./libnice/nice/.libs/libnice.so
-DEPS = ./build/
+LIB_USRSCTP = usrsctp/.built
+LIB_USRSCTP_DIR = ./usrsctp/usrsctplib
+LIB_NICE = libnice/.built
+LIB_NICE_DIR = ./libnice/nice
 
-$(USRSCTP):
-	cd usrsctp && ./bootstrap && ./configure && make && cd ..
+deps: $(LIB_USRSCTP) $(LIB_NICE)
+	rm -Rf vendor
+	mkdir -p vendor/build
+	cp -r $(LIB_USRSCTP_DIR)/.libs/* vendor/build
+	cp -r $(LIB_NICE_DIR)/.libs/* vendor/build
+	cp $(LIB_USRSCTP_DIR)/libusrsctp.la vendor
+	cp $(LIB_NICE_DIR)/libnice.la vendor
 
-$(LIBNICE):
-	cd libnice && ./autogen.sh && ./configure && make && cd ..
+$(LIB_USRSCTP): 
+	cd usrsctp && ./bootstrap && env -u CFLAGS  ./configure && make
+	touch usrsctp/.built
 
-$(DEPS): $(USRSCTP) $(LIBNICE)
-	cp -R ./usrsctp/usrsctplib/.libs/* ./build/ && cp -R ./libnice/nice/.libs/* ./build/ && cp librtcdc.so ./build/
+$(LIB_NICE): 
+	cd libnice && env -u CFLAGS ./autogen.sh && env -u CFLAGS ./configure && make 
+	touch libnice/.built
 
-main: $(TARGET) $(DEPS)
+main: $(TARGET) 
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
-$(TARGET): $(OBJECTS)
+$(TARGET): deps $(OBJECTS) 
 	$(CC) $(CFLAGS) -shared -fPIC $(LDFLAGS) $(OBJECTS) -o $@
 
-.c.o:
-	$(CC) -c $(CFLAGS) $< -o $@
+# .c.o:
+# 	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.o *.so *.dylib *.a example build/* && cd usrsctp && make clean && cd ..
+	rm -Rf vendor
+	rm $(LIB_NICE) $(LIB_USRSCTP)
+	rm -f *.o *.so *.dylib *.a example  && cd usrsctp && make clean && cd ..
 
 test: main
-	LD_LIBRARY_PATH=build/ ./main
+	LD_LIBRARY_PATH=vendor/build/ ./main
 
