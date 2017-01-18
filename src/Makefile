@@ -23,7 +23,7 @@ all:  $(SOURCES) $(TARGET) main.c
 deps: 
 	cd usrsctp && ./bootstrap && ./configure && make && cd ..
 
-main.c: $(TARGET)
+main: $(TARGET)
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
 $(TARGET): $(OBJECTS)
@@ -35,6 +35,6 @@ $(TARGET): $(OBJECTS)
 clean:
 	rm -f *.o *.so *.dylib *.a example && cd usrsctp && make clean && cd ..
 
-test: main.c
+test: main
 	LD_LIBRARY_PATH=usrsctp/usrsctplib/.libs/:./ ./main
 
