@@ -7,6 +7,8 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 
 setup(
-  ext_modules = cythonize([Extension("pyrtcdc", ["pyrtcdc.pyx"], libraries=["rtcdc"],
-      library_dirs=['../src', '../src/usrsctp/usrsctplib/.libs'])])
+  ext_modules = cythonize([Extension("pyrtcdc", 
+                                     ["pyrtcdc.pyx"], 
+                                     include_dirs=['../src/']),
+                          ], gdb_debug=True)
 )
