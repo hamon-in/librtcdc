@@ -18,7 +18,7 @@ else
 	TARGET=lib$(NAME).so
 endif
 
-all:  $(SOURCES) $(TARGET) main
+all:  $(SOURCES) $(TARGET) main deps
 
 .PHONY: clean deps
 
@@ -47,7 +47,7 @@ $(LIB_NICE):
 main: $(TARGET) 
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
-$(TARGET): deps $(OBJECTS) 
+$(TARGET): $(OBJECTS) 
 	$(CC) $(CFLAGS) -shared -fPIC $(LDFLAGS) $(OBJECTS) -o $@
 
 # .c.o:
