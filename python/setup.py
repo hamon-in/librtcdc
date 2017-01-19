@@ -9,6 +9,9 @@ from Cython.Build import cythonize
 setup(
   ext_modules = cythonize([Extension("pyrtcdc", 
                                      ["pyrtcdc.pyx"], 
-                                     include_dirs=['../src/']),
+                                     include_dirs=['../src/'],
+                                     libraries=["rtcdc", "nice"],
+                                     library_dirs=["../src/vendor/build"]
+                                     ),
                           ], gdb_debug=True)
 )
