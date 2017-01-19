@@ -1,5 +1,5 @@
 all:
-	rm pyrtcdc.so
+	rm -rf pyrtcdc.so
 	pip install cython
 	cd ../src/ && make && cd ..
 	python setup.py build_ext -i
