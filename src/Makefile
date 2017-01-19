@@ -27,13 +27,14 @@ LIB_USRSCTP_DIR = ./usrsctp/usrsctplib
 LIB_NICE = libnice/.built
 LIB_NICE_DIR = ./libnice/nice
 
-deps: $(LIB_USRSCTP) $(LIB_NICE)
+deps: $(LIB_USRSCTP) $(LIB_NICE) $(TARGET)
 	rm -Rf vendor
 	mkdir -p vendor/build
 	cp -r $(LIB_USRSCTP_DIR)/.libs/* vendor/build
 	cp -r $(LIB_NICE_DIR)/.libs/* vendor/build
 	cp $(LIB_USRSCTP_DIR)/libusrsctp.la vendor
 	cp $(LIB_NICE_DIR)/libnice.la vendor
+	cp $(TARGET) vendor/build
 
 $(LIB_USRSCTP): 
 	cd usrsctp && ./bootstrap && env -u CFLAGS  ./configure && make
