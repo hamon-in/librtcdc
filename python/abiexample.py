@@ -1,4 +1,5 @@
 from cffi import FFI
+import time
 ffi = FFI()
 ffi.cdef("""    
     typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *channel, void *user_data);
@@ -50,24 +51,27 @@ ffi.cdef("""
     struct rtcdc_peer_connection *
     rtcdc_create_peer_connection(rtcdc_on_channel_cb, rtcdc_on_candidate_cb, rtcdc_on_connect_cb,
                                  const char *stun_server, uint16_t stun_port,
-                                 char* user_data);
+                                 void *user_data);
+
+    void rtcdc_loop(struct rtcdc_peer_connection *peer);
+    char* rtcdc_generate_offer_sdp(rtcdc_peer_connection *peer);
     """)
 C = ffi.dlopen("../src/vendor/build/librtcdc.so")
 
-@ffi.callback("void(rtcdc_peer_connection, rtcdc_data_channel, char*)")
+@ffi.callback("void(rtcdc_peer_connection*, rtcdc_data_channel*, void*)")
 def onChannelCB(peer, dc, userdata):
     print "Channel created"
 
-@ffi.callback("void(rtcdc_peer_connection, char*, char*)")
+@ffi.callback("void(rtcdc_peer_connection*, char*, void*)")
 def onCandidateCB(peer, candidate, userdata):
-    print "Candidate: ", candidate
+    print "Candidate data: " + ffi.string(candidate)
 
-@ffi.callback("void(rtcdc_peer_connection, char*)")
+@ffi.callback("void(rtcdc_peer_connection*, void*)")
 def onConnectCB(peer, userdata):
     print "OnConnect"
-nv = ffi.new("char*", "1")
 
-returnval = C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, "stun.services.mozilla.com", 3478,  nv)
-print returnval
-while True:
-    sleep(3)
+peer = C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, "stun.services.mozilla.com", 3478,  "void *")
+offersdp = C.rtcdc_generate_offer_sdp(peer)
+print ffi.string(offersdp)
+time.sleep(3)
+C.rtcdc_loop(peer)
