@@ -9,7 +9,7 @@ ffi.cdef("""
     typedef void (*rtcdc_on_close_cb)(struct rtcdc_data_channel *channel, void *user_data);
 
     struct sctp_transport;
-    struct rtcdc_data_channel {
+    typedef struct rtcdc_data_channel {
       uint8_t type;
       uint16_t priority;
       uint32_t rtx;
@@ -23,10 +23,8 @@ ffi.cdef("""
       rtcdc_on_message_cb on_message;
       rtcdc_on_close_cb on_close;
       void *user_data;
-    };
+    } rtcdc_data_channel;
     
-    typedef struct rtcdc_peer_connection;
-    typedef struct rtcdc_data_channel;
     typedef void (*rtcdc_on_channel_cb)(struct rtcdc_peer_connection *peer,
                                         struct rtcdc_data_channel *channel, void *user_data);
 
@@ -35,7 +33,7 @@ ffi.cdef("""
 
     typedef void (*rtcdc_on_connect_cb)(struct rtcdc_peer_connection *peer, void *user_data);
 
-    struct rtcdc_peer_connection {
+    typedef struct rtcdc_peer_connection {
       char *stun_server;
       uint16_t stun_port;
       int exit_thread;
@@ -47,28 +45,29 @@ ffi.cdef("""
       rtcdc_on_candidate_cb on_candidate;
       rtcdc_on_connect_cb on_connect;
       void *user_data;
-    };    
+    } rtcdc_peer_connection;
+
     struct rtcdc_peer_connection *
     rtcdc_create_peer_connection(rtcdc_on_channel_cb, rtcdc_on_candidate_cb, rtcdc_on_connect_cb,
                                  const char *stun_server, uint16_t stun_port,
-                                 void *user_data);
+                                 char* user_data);
     """)
 C = ffi.dlopen("../src/vendor/build/librtcdc.so")
 
-@ffi.callback("void(rtcdc_peer_connection, rtcdc_data_channel, void)")
+@ffi.callback("void(rtcdc_peer_connection, rtcdc_data_channel, char*)")
 def onChannelCB(peer, dc, userdata):
     print "Channel created"
 
-@ffi.callback("void(rtcdc_peer_connection, char*, void)")
+@ffi.callback("void(rtcdc_peer_connection, char*, char*)")
 def onCandidateCB(peer, candidate, userdata):
     print "Candidate: ", candidate
 
-@ffi.callback("void(rtcdc_peer_connection, void)")
+@ffi.callback("void(rtcdc_peer_connection, char*)")
 def onConnectCB(peer, userdata):
     print "OnConnect"
+nv = ffi.new("char*", "1")
 
-userdata = ffi.new("void *", "")
-returnval = C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, "stun.services.mozilla.com", 3478,  userdata)
+returnval = C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, "stun.services.mozilla.com", 3478,  nv)
 print returnval
 while True:
     sleep(3)
