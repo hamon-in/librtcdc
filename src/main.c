@@ -4,7 +4,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<glib.h>
-
+#include<pthread.h>
 gchar* getlines() {
     size_t len = 0, linesize, inc_size;
     gchar *line, *lines;
@@ -25,17 +25,27 @@ gchar* getlines() {
     return lines;
 }
 
+
+void* rtcdc_e_loop(void *peer) {
+    struct rtcdc_peer_connection *speer;
+    speer = (struct rtcdc_peer_connection *) peer;
+    rtcdc_loop(speer);
+}
+
+
 int main() {
+    int dc_open = 0;
     struct rtcdc_peer_connection *rtcdc_pc;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         printf("\nData received: %s\n", data);
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
-        printf("\nDataChannel opened, Sending a test message.\n");
-        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "test", strlen("test"));
+        printf("\nDataChannel opened.\n");
+        dc_open = 1;
     }
     void onclose(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel closed!\n");
+        dc_open = 0;
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
@@ -47,10 +57,8 @@ int main() {
         channel->on_message = onmessage;
     }
     void oncandidate(struct rtcdc_peer_connection *peer, const char *candidate, void *user_data) {
-        printf("\nCandidate found:\n%s\n", g_base64_encode(candidate, strlen(candidate)));
+        //printf("\nCandidate found:\n%s\n", g_base64_encode(candidate, strlen(candidate)));
     }
-
-    
 
     void *user_data;
     printf("\nCreating peer connection...\n");
@@ -75,7 +83,7 @@ int main() {
     const gchar *remote_sdp_offer, *remote_candidate;
     remote_sdp_offer = getlines();
     dec_remote_sdp_offer = g_base64_decode(remote_sdp_offer, &dec_remote_sdp_len);
-    printf("\nDecoded remote SDP:\n%s\n", dec_remote_sdp_offer);
+    //printf("\nDecoded remote SDP:\n%s\n", dec_remote_sdp_offer);
     parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, dec_remote_sdp_offer);
     if (parse_offer >= 0) {
         offer = rtcdc_generate_offer_sdp(rtcdc_pc);
@@ -89,7 +97,7 @@ int main() {
     printf("\nEnter remote candidate (press enter twice): \n");
     remote_candidate = getlines();    
     dec_remote_candidate = g_base64_decode(remote_candidate, &dec_candidate_len);
-    printf("\nDecoded remote candidate:\n%s\n", dec_remote_candidate);
+    //printf("\nDecoded remote candidate:\n%s\n", dec_remote_candidate);
     
     parse_candidate = rtcdc_parse_candidate_sdp(rtcdc_pc, dec_remote_candidate);
     if (parse_candidate > 0) {
@@ -98,10 +106,27 @@ int main() {
         printf("\nInvalid candidates!\n");
         _exit(1);
     }
-    rtcdc_loop(rtcdc_pc);
+    pthread_t tid;
+    pthread_create(&tid, NULL, rtcdc_e_loop, (void *) rtcdc_pc);
+    while (1 == 1)
+    {
+        if (rtcdc_pc->initialized > 0) {
+            struct rtcdc_data_channel *channel;
+            if (dc_open == 1) {
+                channel = rtcdc_pc->channels[0];
+                if (channel->state > RTCDC_CHANNEL_STATE_CLOSED) {
+                    printf("\nEnter a message (press enter twice): ");
+                    gchar* message;
+                    message = getlines();
+                    rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message));
+                    printf("\nMessage sent!\n");
+                    g_free(message);
+                }
+            }
+        }
+        sleep(1);
+    }
     g_free(dec_remote_sdp_offer);
     g_free(dec_remote_candidate);
     return 0;
 }
-
-
