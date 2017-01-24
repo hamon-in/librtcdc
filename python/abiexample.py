@@ -1,5 +1,8 @@
 from cffi import FFI
 import time
+
+from base64 import b64encode, b64decode
+
 ffi = FFI()
 ffi.cdef("""    
     typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *channel, void *user_data);
@@ -55,23 +58,103 @@ ffi.cdef("""
 
     void rtcdc_loop(struct rtcdc_peer_connection *peer);
     char* rtcdc_generate_offer_sdp(rtcdc_peer_connection *peer);
+    char* rtcdc_generate_local_candidate_sdp(rtcdc_peer_connection *peer);
+
+    int rtcdc_parse_offer_sdp(struct rtcdc_peer_connection *peer, const char *offer);
+    int rtcdc_parse_candidate_sdp(struct rtcdc_peer_connection *peer, const char *candidates);
+    struct rtcdc_data_channel *
+    rtcdc_create_data_channel(struct rtcdc_peer_connection *peer,
+                              const char *label, const char *protocol,
+                              rtcdc_on_open_cb, rtcdc_on_message_cb, rtcdc_on_close_cb,
+                              void *user_data);
+
+    void
+    rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel);
+
+    int
+    rtcdc_send_message(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len);
+
     """)
 C = ffi.dlopen("../src/vendor/build/librtcdc.so")
 
+RTCDC_DATATYPE_STRING = 0
+
+@ffi.callback("void(rtcdc_data_channel*, void*)")
+def onOpen(channel, userdata):
+    print "Data Channel opened!"
+    while True:
+        to_send = raw_input("Enter message to send: ")
+        string_length = len(to_send)
+        C.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, to_send, string_length)
+
+@ffi.callback("void(rtcdc_data_channel*, int, void*, size_t, void*)")
+def onMessage(channel, datatype, data, length, userdata):
+    message = ffi.cast("char *", data)
+    print "Message received: ", message
+    pass
+
+@ffi.callback("void(rtcdc_data_channel*, void*)")
+def onClose(channel, userdata):
+    print "Data channel closed."
+
 @ffi.callback("void(rtcdc_peer_connection*, rtcdc_data_channel*, void*)")
 def onChannelCB(peer, dc, userdata):
-    print "Channel created"
+    print "Channel created."
 
 @ffi.callback("void(rtcdc_peer_connection*, char*, void*)")
 def onCandidateCB(peer, candidate, userdata):
-    print "Candidate data: " + ffi.string(candidate)
+    pass
+    #print "Candidate data: " + ffi.string(candidate)
 
 @ffi.callback("void(rtcdc_peer_connection*, void*)")
 def onConnectCB(peer, userdata):
-    print "OnConnect"
+    print "Peer connection established. Now opening the data channel through it..."
+    C.rtcdc_create_data_channel(peer, "test-dc", "", onOpen, onMessage, onClose, "void *")
 
 peer = C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, "stun.services.mozilla.com", 3478,  "void *")
 offersdp = C.rtcdc_generate_offer_sdp(peer)
-print ffi.string(offersdp)
-time.sleep(3)
+offersdp = ffi.string(offersdp)
+print ""
+print "Offer SDP: " + b64encode(offersdp)
+
+local_cand = C.rtcdc_generate_local_candidate_sdp(peer)
+local_cand = ffi.string(local_cand)
+print ""
+print "Local Candidate: " + b64encode(local_cand)
+
+while True:
+    print ""
+    remote_sdp = raw_input("Enter SDP Offer in b64: ")
+    try:
+        remote_sdp = b64decode(remote_sdp).decode('UTF-8')
+        remote_sdp = str(remote_sdp)
+    except TypeError:
+        print "Base64 Error! Enter valid base64 encoded SDP Offer"
+        continue
+    if (len(remote_sdp) < 1):
+        print "Enter a valid SDP offer in base 64."
+        continue
+    parse_offer = C.rtcdc_parse_offer_sdp(peer, remote_sdp)
+    if (parse_offer >= 0):
+        new_offer = C.rtcdc_generate_offer_sdp(peer)
+        new_offer = ffi.string(new_offer)
+        new_offer = b64encode(new_offer)
+        print ""
+        print "New offer: " + new_offer
+        break
+    else:
+        print "Invalid remote offer SDP"
+
+while True:
+    print ""
+    remote_cand = raw_input("Enter remote candidate: ")
+    remote_cand = b64decode(remote_cand).decode('UTF-8')
+    remote_cand = str(remote_cand)
+
+    parse_cand = C.rtcdc_parse_candidate_sdp(peer, remote_cand)
+    if (parse_cand > 0):
+        print "Valid candidates."
+        break
+    else:
+        print "Invalid candidates"
 C.rtcdc_loop(peer)
