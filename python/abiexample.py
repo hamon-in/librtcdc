@@ -1,15 +1,14 @@
 from cffi import FFI
-import time
+from time import sleep
 
 from base64 import b64encode, b64decode
+
+dc_open = False
 
 ffi = FFI()
 ffi.cdef("""    
     typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *channel, void *user_data);
-
-    typedef void (*rtcdc_on_message_cb)(struct rtcdc_data_channel *channel,
-                                        int datatype, void *data, size_t len, void *user_data);
-
+    typedef void (*rtcdc_on_message_cb)(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data);
     typedef void (*rtcdc_on_close_cb)(struct rtcdc_data_channel *channel, void *user_data);
 
     struct sctp_transport;
@@ -76,26 +75,27 @@ ffi.cdef("""
 
     """)
 C = ffi.dlopen("../src/vendor/build/librtcdc.so")
-
+RTCDC_CHANNEL_STATE_CLOSED = 0
+RTCDC_CHANNEL_STATE_CONNECTING = 1
+RTCDC_CHANNEL_STATE_CONNECTED = 2
 RTCDC_DATATYPE_STRING = 0
-
 @ffi.callback("void(rtcdc_data_channel*, void*)")
 def onOpen(channel, userdata):
+    global dc_open
     print "Data Channel opened!"
-    while True:
-        to_send = raw_input("Enter message to send: ")
-        string_length = len(to_send)
-        C.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, to_send, string_length)
+    dc_open = True
 
 @ffi.callback("void(rtcdc_data_channel*, int, void*, size_t, void*)")
 def onMessage(channel, datatype, data, length, userdata):
-    message = ffi.cast("char *", data)
-    print "Message received: ", message
-    pass
+    print "OnMessage callback"
+    #message = ffi.cast("char *", data)
+    #print "Message received: ", message
 
 @ffi.callback("void(rtcdc_data_channel*, void*)")
 def onClose(channel, userdata):
+    global dc_open
     print "Data channel closed."
+    dc_open = False
 
 @ffi.callback("void(rtcdc_peer_connection*, rtcdc_data_channel*, void*)")
 def onChannelCB(peer, dc, userdata):
@@ -157,4 +157,18 @@ while True:
         break
     else:
         print "Invalid candidates"
-C.rtcdc_loop(peer)
+
+import thread
+thread.start_new_thread(C.rtcdc_loop, (peer, ))
+
+while True:
+    if (peer[0].initialized > 0):
+        if (dc_open is True and peer[0].channels[0].state > RTCDC_CHANNEL_STATE_CLOSED):
+            to_send = raw_input("Enter message to send: ")
+            string_length = len(to_send)
+            channel = peer[0].channels[0]
+            C.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, to_send, string_length)
+        else:
+            sleep(1)
+    else:
+        sleep(1)
