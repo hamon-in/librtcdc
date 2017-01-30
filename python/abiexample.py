@@ -1,6 +1,7 @@
 from cffi import FFI
 from time import sleep
 
+import thread
 from base64 import b64encode, b64decode
 
 dc_open = False
@@ -85,11 +86,11 @@ def onOpen(channel, userdata):
     print "Data Channel opened!"
     dc_open = True
 
-@ffi.callback("void(rtcdc_data_channel*, int, void*, size_t, void*)")
+@ffi.callback("void(*)(rtcdc_data_channel*, int, void*, size_t, void*)")
 def onMessage(channel, datatype, data, length, userdata):
-    print "OnMessage callback"
-    #message = ffi.cast("char *", data)
-    #print "Message received: ", message
+    message = ffi.cast("char *", data)
+    print ""
+    print "Message received: ", ffi.string(message)
 
 @ffi.callback("void(rtcdc_data_channel*, void*)")
 def onClose(channel, userdata):
@@ -99,6 +100,7 @@ def onClose(channel, userdata):
 
 @ffi.callback("void(rtcdc_peer_connection*, rtcdc_data_channel*, void*)")
 def onChannelCB(peer, dc, userdata):
+    dc.on_message = onMessage
     print "Channel created."
 
 @ffi.callback("void(rtcdc_peer_connection*, char*, void*)")
@@ -158,7 +160,6 @@ while True:
     else:
         print "Invalid candidates"
 
-import thread
 thread.start_new_thread(C.rtcdc_loop, (peer, ))
 
 while True:
