@@ -172,7 +172,7 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
   return peer;
 }""",
 include_dirs = ["../src/", "../src/usrsctp/usrsctplib/",
-        "/usr/include/glib-2.0", "/usr/lib64/glib-2.0/include"])
+                "/usr/include/glib-2.0", "/usr/lib64/glib-2.0/include", "/usr/lib/x86_64-linux-gnu/glib-2.0/include"])
 
 RTCDC_CHANNEL_STATE_CLOSED = 0
 RTCDC_CHANNEL_STATE_CONNECTING = 1
