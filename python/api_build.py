@@ -10,6 +10,13 @@ dc_open = False
 ffibuilder = FFI()
 
 ffibuilder.cdef("""
+typedef void (*rtcdc_on_candidate_cb)(struct rtcdc_peer_connection *, const char *, void *);
+typedef void (*rtcdc_on_connect_cb)(struct rtcdc_peer_connection *, void *);
+typedef void (*rtcdc_on_message_cb)(struct rtcdc_data_channel *, int, void *, size_t, void *);
+typedef void (*rtcdc_on_close_cb)(struct rtcdc_data_channel *, void *);
+
+typedef void (*rtcdc_on_channel_cb)(struct rtcdc_peer_connection *, struct rtcdc_data_channel *, void *);
+typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *, void *);
 
 typedef struct rtcdc_data_channel {
       uint8_t type;
@@ -27,8 +34,6 @@ typedef struct rtcdc_data_channel {
       void *user_data;
     } rtcdc_data_channel;
     
-typedef void (*rtcdc_on_channel_cb)(struct rtcdc_peer_connection *, struct rtcdc_data_channel *, void *) rtcdc_on_channel_cb;
-typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *, void *) rtcdc_on_open_cb;
 typedef struct rtcdc_peer_connection {
 char *stun_server;
       uint16_t stun_port;
@@ -44,10 +49,6 @@ char *stun_server;
     } rtcdc_peer_connection;
 
 
-typedef void (*rtcdc_on_candidate_cb)(struct rtcdc_peer_connection *, const char *, void *) rtcdc_on_candidate_cb;
-typedef void (*rtcdc_on_connect_cb)(struct rtcdc_peer_connection *, void *) rtcdc_on_connect_cb;
-typedef void (*rtcdc_on_message_cb)(struct rtcdc_data_channel *, int, void *, size_t, void *) rtcdc_on_message_cb;
-typedef void (*rtcdc_on_close_cb)(struct rtcdc_data_channel *, void *) rtcdc_on_close_cb;
 
 
 
@@ -73,6 +74,7 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb,
 ffibuilder.set_source("_apilib",
                       r"""
 #include <sys/types.h>
+#include <rtcdc.h>
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #include <WinSock2.h>
@@ -227,11 +229,8 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
   peer->user_data = user_data;
 
   return peer;
-}
-
-
-
-                      """)
+}""",
+include_dirs = ["../src/"])
 
 RTCDC_CHANNEL_STATE_CLOSED = 0
 RTCDC_CHANNEL_STATE_CONNECTING = 1
@@ -240,4 +239,3 @@ RTCDC_DATATYPE_STRING = 0
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose = True)
-    
