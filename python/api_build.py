@@ -131,7 +131,7 @@ rtcdc_loop(struct rtcdc_peer_connection *peer);
 extern "Python" void onmessage_cb(struct rtcdc_data_channel *, int, void *, size_t, void *);
 extern "Python" void onopen_cb(struct rtcdc_data_channel *, void *);
 extern "Python" void onclose_cb(struct rtcdc_data_channel *, void *);
-extern "Python" void onconnect_cb(struct rtcdc_data_channel *, int, void *, size_t, void *);
+extern "Python" void onconnect_cb(struct rtcdc_peer_connection *, void *);
 extern "Python" void onchannel_cb(struct rtcdc_peer_connection *, struct rtcdc_data_channel *, void *);
 extern "Python" void oncandidate_cb(struct rtcdc_peer_connection *,const char *, void *);
 """)
