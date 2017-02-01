@@ -1,10 +1,10 @@
 ## Instructions
 
-- Compile the C part. =cd ../src= and then make.
+- Compile the C part. `cd ../src` and then `make`.
 - Set the env variable: `export LD_LIBRARY_PATH=../src/vendor/build`
-- Make a python2 `virtualenv` and `pip install cffi` there.
-- Run `python ./setup.py install` to install the library. 
-- Run `python ./dc_test.py` to run the tests.
+- Make a python2 virtualenv, activate it and `pip install cffi` there.
+- Run `python ./setup.py install` from python folder to install the library. 
+- Run `python ./dc_test.py` from the python folder to run the tests.
 
 ## Using the python library
 
