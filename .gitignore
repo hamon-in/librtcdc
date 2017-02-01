@@ -8,9 +8,11 @@ python/pyrtcdc.c
 python/*.so
 .built
 vendor/
-*.py~
+*.*~
 *.*#
 _apilib.c
 _apilib.o
 main
 .dirstamp
+*.pyc
+*.egg-info/
