@@ -9,9 +9,8 @@ python/*.so
 .built
 vendor/
 *.py~
-*.py#
-*.c#
-*.md#
+*.*#
 _apilib.c
 _apilib.o
-
+main
+.dirstamp
