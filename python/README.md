@@ -9,7 +9,7 @@
 ## Using the python library
 
 #### Example usage
-```
+```python
   from datachannel import DataChannel
   import time
 
