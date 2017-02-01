@@ -9,7 +9,7 @@
 - Run python =./dc_test.py= to run the tests.
 - Using the python library
 
-Example usage
+* Example usage
 #+BEGIN_SRC python
   from datachannel import DataChannel
   import time
@@ -47,7 +47,7 @@ Example usage
       peerA.send_message("test") # Or peerB can do the same
 
 #+END_SRC
-Requirements
+* Requirements
 
-Python 2
-CFFI > v1.6
+- Python 2
+- CFFI > v1.6
