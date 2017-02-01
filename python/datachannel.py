@@ -1,110 +1,41 @@
-from cffi import FFI
+from _apilib import ffi, lib
 from time import sleep
 import thread
 from base64 import b64encode, b64decode
-ffi = FFI()
 RTCDC_CHANNEL_STATE_CLOSED = 0
 RTCDC_CHANNEL_STATE_CONNECTING = 1
 RTCDC_CHANNEL_STATE_CONNECTED = 2
 RTCDC_DATATYPE_STRING = 0
-ffi.cdef("""
-            typedef void (*rtcdc_on_open_cb)(struct rtcdc_data_channel *channel, void *user_data);
-            typedef void (*rtcdc_on_message_cb)(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data);
-            typedef void (*rtcdc_on_close_cb)(struct rtcdc_data_channel *channel, void *user_data);
 
-            struct sctp_transport;
-            typedef struct rtcdc_data_channel {
-              uint8_t type;
-              uint16_t priority;
-              uint32_t rtx;
-              uint32_t lifetime;
-              char *label;
-              char *protocol;
-              int state;
-              uint16_t sid;
-              struct sctp_transport *sctp;
-              rtcdc_on_open_cb on_open;
-              rtcdc_on_message_cb on_message;
-              rtcdc_on_close_cb on_close;
-              void *user_data;
-            } rtcdc_data_channel;
-            
-            typedef void (*rtcdc_on_channel_cb)(struct rtcdc_peer_connection *peer,
-                                                struct rtcdc_data_channel *channel, void *user_data);
-
-            typedef void (*rtcdc_on_candidate_cb)(struct rtcdc_peer_connection *peer,
-                                                  const char *candidate, void *user_data);
-
-            typedef void (*rtcdc_on_connect_cb)(struct rtcdc_peer_connection *peer, void *user_data);
-
-            typedef struct rtcdc_peer_connection {
-              char *stun_server;
-              uint16_t stun_port;
-              int exit_thread;
-              struct rtcdc_transport *transport;
-              int initialized;
-              int role;
-              struct rtcdc_data_channel *channels[128];
-              rtcdc_on_channel_cb on_channel;
-              rtcdc_on_candidate_cb on_candidate;
-              rtcdc_on_connect_cb on_connect;
-              void *user_data;
-            } rtcdc_peer_connection;
-
-            struct rtcdc_peer_connection *
-            rtcdc_create_peer_connection(rtcdc_on_channel_cb, rtcdc_on_candidate_cb, rtcdc_on_connect_cb,
-                                         const char *stun_server, uint16_t stun_port,
-                                         void *user_data);
-
-            void rtcdc_loop(struct rtcdc_peer_connection *peer);
-            char* rtcdc_generate_offer_sdp(rtcdc_peer_connection *peer);
-            char* rtcdc_generate_local_candidate_sdp(rtcdc_peer_connection *peer);
-
-            int rtcdc_parse_offer_sdp(struct rtcdc_peer_connection *peer, const char *offer);
-            int rtcdc_parse_candidate_sdp(struct rtcdc_peer_connection *peer, const char *candidates);
-            struct rtcdc_data_channel *
-            rtcdc_create_data_channel(struct rtcdc_peer_connection *peer,
-                                      const char *label, const char *protocol,
-                                      rtcdc_on_open_cb, rtcdc_on_message_cb, rtcdc_on_close_cb,
-                                      void *user_data);
-
-            void
-            rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel);
-
-            int
-            rtcdc_send_message(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len);
-
-            """)
-
-@ffi.callback("void(rtcdc_data_channel*, void*)")
-def onOpenCB(channel, userdata):
+@ffi.def_extern()
+def onopen_cb(channel, userdata):
     ffi.from_handle(userdata)._onOpen(channel)
 
-@ffi.callback("void(*)(rtcdc_data_channel*, int, void*, size_t, void*)")
-def onMessageCB(channel, datatype, data, length, userdata):
+@ffi.def_extern()
+def onmessage_cb(channel, datatype, data, length, userdata):
     if datatype == RTCDC_DATATYPE_STRING:
         message = ffi.cast("char *", data)
         message = ffi.string(message)
         if userdata:
             ffi.from_handle(userdata)._onMessage(message[:length])
 
-@ffi.callback("void(rtcdc_data_channel*, void*)")
-def onCloseCB(channel, userdata):
+@ffi.def_extern()
+def onclose_cb(channel, userdata):
     ffi.from_handle(userdata)._onClose(channel)
 
-@ffi.callback("void(rtcdc_peer_connection*, rtcdc_data_channel*, void*)")
-def onChannelCB(peer, dc, userdata):
-    dc.on_message = onMessageCB
+@ffi.def_extern()
+def onchannel_cb(peer, dc, userdata):
+    dc.on_message = lib.onmessage_cb
     dc.user_data = userdata
     ffi.from_handle(userdata)._onChannel(peer, dc)
 
-@ffi.callback("void(rtcdc_peer_connection*, char*, void*)")
-def onCandidateCB(peer, candidate, userdata):
+@ffi.def_extern()
+def oncandidate_cb(peer, candidate, userdata):
     candidate = ffi.string(candidate)
     ffi.from_handle(userdata)._onCandidate(peer, candidate)
 
-@ffi.callback("void(rtcdc_peer_connection*, void*)")
-def onConnectCB(peer, userdata):
+@ffi.def_extern()
+def onconnect_cb(peer, userdata):
     ffi.from_handle(userdata)._onConnect(peer, userdata)
 
 class DataChannel():
@@ -127,7 +58,7 @@ class DataChannel():
         self.onCandidate(peer, candidate)
 
     def _onConnect(self, peer, userdata):
-        self.C.rtcdc_create_data_channel(peer, self.dcName, self.protocol, onOpenCB, onMessageCB, onCloseCB, userdata)
+        lib.rtcdc_create_data_channel(peer, self.dcName, self.protocol, lib.onopen_cb, lib.onmessage_cb, lib.onclose_cb, userdata)
         self.onConnect(peer)
     
     def onOpen(self, channel):
@@ -154,20 +85,17 @@ class DataChannel():
         self.dcName = dcName
         self.protocol = protocol
         port = int(port)
-        self.ffi = ffi
-        
-        self.C = self.ffi.dlopen("../src/vendor/build/librtcdc.so")
-        self.peer = self.C.rtcdc_create_peer_connection(onChannelCB, onCandidateCB, onConnectCB, stunServer, port, self._handle)
-        thread.start_new_thread(self.C.rtcdc_loop, (self.peer, ))
+        self.peer = lib.rtcdc_create_peer_connection(lib.onchannel_cb, lib.oncandidate_cb, lib.onconnect_cb, stunServer, port, self._handle)
+        thread.start_new_thread(lib.rtcdc_loop, (self.peer, ))
 
     def generate_offer_sdp(self):
-        offerSDP = self.C.rtcdc_generate_offer_sdp(self.peer)
-        offerSDP = self.ffi.string(offerSDP)
+        offerSDP = lib.rtcdc_generate_offer_sdp(self.peer)
+        offerSDP = ffi.string(offerSDP)
         return b64encode(offerSDP)
 
     def generate_local_candidate(self):
-        candidateSDP = self.C.rtcdc_generate_local_candidate_sdp(self.peer)
-        candidateSDP = self.ffi.string(candidateSDP)
+        candidateSDP = lib.rtcdc_generate_local_candidate_sdp(self.peer)
+        candidateSDP = ffi.string(candidateSDP)
         return b64encode(candidateSDP)
 
     def parse_offer_sdp(self, offerSDP):
@@ -175,7 +103,7 @@ class DataChannel():
             remoteSDP = str(b64decode(offerSDP))
         except TypeError:
             print "Invalid base64!"
-        parse_offer = self.C.rtcdc_parse_offer_sdp(self.peer, remoteSDP)
+        parse_offer = lib.rtcdc_parse_offer_sdp(self.peer, remoteSDP)
         if parse_offer >= 0:
             return self.generate_offer_sdp()
         else:
@@ -187,14 +115,14 @@ class DataChannel():
             remoteCand = str(b64decode(candidate))
         except TypeError:
             print "Invalid base64!"
-        parse_cand = self.C.rtcdc_parse_candidate_sdp(self.peer, remoteCand)
+        parse_cand = lib.rtcdc_parse_candidate_sdp(self.peer, remoteCand)
         return (parse_cand > 0)
     
     def send_message(self, message):
         if (self.peer[0].initialized > 0):
             if (self.dc_open == True and self.peer[0].channels[0].state > RTCDC_CHANNEL_STATE_CLOSED):
                 channel = self.peer[0].channels[0]
-                return (self.C.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, len(message)) == 0)
+                return (lib.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, len(message)) == 0)
             else:
                 return False
         else:
