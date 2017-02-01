@@ -8,3 +8,10 @@ python/pyrtcdc.c
 python/*.so
 .built
 vendor/
+*.py~
+*.py#
+*.c#
+*.md#
+_apilib.c
+_apilib.o
+
