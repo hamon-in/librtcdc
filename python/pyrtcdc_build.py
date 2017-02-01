@@ -5,7 +5,7 @@ dc_open = False
 
 ffibuilder = FFI()
 
-ffibuilder.set_source("_apilib",
+ffibuilder.set_source("pyrtcdc",
 """#include "rtcdc.h"
 """,
 include_dirs = ["../src/", "../src/usrsctp/usrsctplib/",

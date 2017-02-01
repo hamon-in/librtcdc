@@ -1,4 +1,4 @@
-from _apilib import ffi, lib
+from pyrtcdc import ffi, lib
 from time import sleep
 import thread
 from base64 import b64encode, b64decode
