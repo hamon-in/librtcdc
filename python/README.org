@@ -1,7 +1,10 @@
 * Instructions
 
 - Compile the C part. =cd ../src= and then make.
-- Set the env variable: =export LD_LIBRARY_PATH=../src/vendor/build=
+- Set the env variable: 
+#+BEGIN_SRC shell-script 
+  export LD_LIBRARY_PATH=../src/vendor/build 
+#+END_SRC
 - Make a python2 =virtualenv= and =pip install cffi= there.
 - Run python =./dc_test.py= to run the tests.
 - Using the python library
