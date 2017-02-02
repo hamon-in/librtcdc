@@ -7,7 +7,7 @@
 #include<pthread.h>
 gchar* getlines() {
     size_t len = 0, linesize, inc_size;
-    gchar *line, *lines;
+    gchar *line, *lines=NULL;
     inc_size = 0;
     linesize = 2;
     while (linesize > 1) {
