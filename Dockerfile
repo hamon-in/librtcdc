@@ -18,7 +18,7 @@ RUN apt-get install -qy libssl-dev
 
 RUN pip install cffi
 
-ADD ./librtcdc/ /psl-librtcdc
+ADD ./ /psl-librtcdc
 WORKDIR /psl-librtcdc
 RUN cd src && make
 ENV LD_LIBRARY_PATH /psl-librtcdc/src/vendor/build
