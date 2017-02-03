@@ -6,6 +6,7 @@ RTCDC_CHANNEL_STATE_CLOSED = 0
 RTCDC_CHANNEL_STATE_CONNECTING = 1
 RTCDC_CHANNEL_STATE_CONNECTED = 2
 RTCDC_DATATYPE_STRING = 0
+RTCDC_DATATYPE_BINARY = 1
 
 @ffi.def_extern()
 def onopen_cb(channel, userdata):
@@ -17,7 +18,10 @@ def onmessage_cb(channel, datatype, data, length, userdata):
         message = ffi.cast("char *", data)
         message = ffi.string(message)
         message = message[:length].decode("UTF-8")
-        if userdata:
+    if datatype == RTCDC_DATATYPE_BINARY:
+        message = ffi.cast("char *", data)
+        message = ffi.buffer(message, length)[:]
+    if userdata:
             ffi.from_handle(userdata)._onMessage(message)
 
 @ffi.def_extern()
@@ -121,11 +125,15 @@ class DataChannel():
     
     def send_message(self, message):
         length_msg = len(message)
-        message = bytes(message, "UTF-8")
+        if type(message) is str:
+            datatype = RTCDC_DATATYPE_STRING
+            message = bytes(message, "UTF-8")
+        elif type(message) is bytes:
+            datatype = RTCDC_DATATYPE_BINARY
         if (self.peer[0].initialized > 0):
             if (self.dc_open == True and self.peer[0].channels[0].state > RTCDC_CHANNEL_STATE_CLOSED):
                 channel = self.peer[0].channels[0]
-                return (lib.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, length_msg) == 0)
+                return (lib.rtcdc_send_message(channel, datatype, message, length_msg) == 0)
             else:
                 return False
         else:
