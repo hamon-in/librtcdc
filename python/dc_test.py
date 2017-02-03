@@ -4,12 +4,12 @@ from time import sleep
 
 class PeerA(dc.DataChannel):
     def onChannel(self, peer, channel):
-        print "DC opened, sending a test msg"
+        print("DC opened, sending a test msg")
         self.send_message("test")
 
 class PeerB(dc.DataChannel):
     def onMessage(self, message):
-        print "PeerB received: " + message
+        print("PeerB received: " + message)
         self.message = message
 
 class TestRTC(unittest.TestCase):

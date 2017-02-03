@@ -1,6 +1,6 @@
 from pyrtcdc import ffi, lib
 from time import sleep
-import thread
+from threading import Thread
 from base64 import b64encode, b64decode
 RTCDC_CHANNEL_STATE_CLOSED = 0
 RTCDC_CHANNEL_STATE_CONNECTING = 1
@@ -16,8 +16,9 @@ def onmessage_cb(channel, datatype, data, length, userdata):
     if datatype == RTCDC_DATATYPE_STRING:
         message = ffi.cast("char *", data)
         message = ffi.string(message)
+        message = message[:length].decode("UTF-8")
         if userdata:
-            ffi.from_handle(userdata)._onMessage(message[:length])
+            ffi.from_handle(userdata)._onMessage(message)
 
 @ffi.def_extern()
 def onclose_cb(channel, userdata):
@@ -82,11 +83,11 @@ class DataChannel():
     def __init__(self, dcName="test-dc", stunServer="stun.services.mozilla.com", port=3418, protocol=""):
         self._handle = ffi.new_handle(self)
         self.dc_open = False
-        self.dcName = dcName
-        self.protocol = protocol
+        self.dcName = bytes(dcName, "UTF-8")
+        self.protocol = bytes(protocol, "UTF-8")
         port = int(port)
-        self.peer = lib.rtcdc_create_peer_connection(lib.onchannel_cb, lib.oncandidate_cb, lib.onconnect_cb, stunServer, port, self._handle)
-        thread.start_new_thread(lib.rtcdc_loop, (self.peer, ))
+        self.peer = lib.rtcdc_create_peer_connection(lib.onchannel_cb, lib.oncandidate_cb, lib.onconnect_cb, bytes(stunServer, "UTF-8"), port, self._handle)
+        Thread(target=lib.rtcdc_loop, args=(self.peer, ),).start()
 
     def generate_offer_sdp(self):
         offerSDP = lib.rtcdc_generate_offer_sdp(self.peer)
@@ -100,29 +101,31 @@ class DataChannel():
 
     def parse_offer_sdp(self, offerSDP):
         try:
-            remoteSDP = str(b64decode(offerSDP))
+            remoteSDP = b64decode(offerSDP)
         except TypeError:
-            print "Invalid base64!"
+            print("Invalid base64!")
         parse_offer = lib.rtcdc_parse_offer_sdp(self.peer, remoteSDP)
         if parse_offer >= 0:
             return self.generate_offer_sdp()
         else:
-            print "Error in parsing offer SDP"
+            print("Error in parsing offer SDP")
             return None
 
     def parse_candidates(self, candidate):
         try:
-            remoteCand = str(b64decode(candidate))
+            remoteCand = b64decode(candidate)
         except TypeError:
-            print "Invalid base64!"
+            print("Invalid base64!")
         parse_cand = lib.rtcdc_parse_candidate_sdp(self.peer, remoteCand)
         return (parse_cand > 0)
     
     def send_message(self, message):
+        length_msg = len(message)
+        message = bytes(message, "UTF-8")
         if (self.peer[0].initialized > 0):
             if (self.dc_open == True and self.peer[0].channels[0].state > RTCDC_CHANNEL_STATE_CLOSED):
                 channel = self.peer[0].channels[0]
-                return (lib.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, len(message)) == 0)
+                return (lib.rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, length_msg) == 0)
             else:
                 return False
         else:
