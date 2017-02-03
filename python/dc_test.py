@@ -6,6 +6,8 @@ class PeerA(dc.DataChannel):
     def onChannel(self, peer, channel):
         print("DC opened, sending a test msg")
         self.send_message("test")
+    def onMessage(self, message):
+        self.message = message
 
 class PeerB(dc.DataChannel):
     def onMessage(self, message):
@@ -34,6 +36,9 @@ class TestRTC(unittest.TestCase):
     def test_msg(self):
         sleep(7)
         self.assertEqual(self.peerB.message, "test")
+        self.peerB.send_message(b'test')
+        sleep(3)
+        self.assertEqual(self.peerA.message, b'test')
 
 if __name__ == '__main__':
     unittest.main()
