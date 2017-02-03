@@ -2,7 +2,7 @@
 
 - Compile the C part. `cd ../src` and then `make`.
 - Set the env variable: `export LD_LIBRARY_PATH=../src/vendor/build`
-- Make a python2 virtualenv, activate it and `pip install cffi` there.
+- Make a python3 virtualenv, activate it and `pip install cffi` there.
 - Run `python ./setup.py install` from python folder to install the library. 
 - Run `python ./dc_test.py` from the python folder to run the tests.
 
@@ -16,17 +16,17 @@
   # Override the callbacks
   class Peer(DataChannel):
       def onOpen(self, channel):
-          print "Data Channel opened"
+          print("Data Channel opened")
       def onMessage(self, message):
-          print "Message received: ", message
+          print("Message received: ", message)
       def onClose(self, channel):
-          print "Data Channel closed"
+          print("Data Channel closed")
       def onChannel(self, peer, channel):
-          print "Channel created"
+          print("Channel created")
       def onCandidate(self, peer, candidate):
-          print "ICE Candidates found: ", candidate
+          print("ICE Candidates found: ", candidate)
       def onConnect(self, peer):
-          print "Peer connection established"
+          print("Peer connection established")
 
   # Create two peers.
   peerA = Peer()
@@ -49,5 +49,5 @@
 
 #### Requirements
 
-- Python 2
+- Python 3
 - CFFI >= v1.6
