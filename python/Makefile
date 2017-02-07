@@ -1,7 +1,6 @@
 all:
 	rm -rf pyrtcdc.so
-	pip install cython
 	cd ../src/ && make && cd ..
-	python setup.py build_ext -i
+	python pyrtcdc_build.py
 test:
-	export LD_LIBRARY_PATH=../src/vendor/build && python example.py
+	export LD_LIBRARY_PATH=../src/vendor/build && python dc_test.py
