@@ -88,7 +88,7 @@ int main() {
     gsize dec_remote_sdp_len = 0, dec_candidate_len= 0;
 
     printf("\n Enter remote SDP offer (press enter twice): \n");
-    const gchar *remote_sdp_offer=NULL, *remote_candidate=NULL;
+    gchar *remote_sdp_offer=NULL, *remote_candidate=NULL;
     remote_sdp_offer = getlines();
     dec_remote_sdp_offer = g_base64_decode(remote_sdp_offer, &dec_remote_sdp_len);
     g_free(remote_sdp_offer);
