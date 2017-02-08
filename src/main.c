@@ -93,7 +93,7 @@ int main() {
     dec_remote_sdp_offer = g_base64_decode(remote_sdp_offer, &dec_remote_sdp_len);
     g_free(remote_sdp_offer);
     //printf("\nDecoded remote SDP:\n%s\n", dec_remote_sdp_offer);
-    parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, dec_remote_sdp_offer);
+    parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, (gchar *)dec_remote_sdp_offer);
     if (parse_offer >= 0) {
         offer = rtcdc_generate_offer_sdp(rtcdc_pc);
         b_offer = g_base64_encode(offer, strlen(offer));
