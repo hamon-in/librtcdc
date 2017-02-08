@@ -20,7 +20,7 @@ endif
 
 all:  $(SOURCES) $(TARGET) main
 
-.PHONY: clean deps finaldeps
+.PHONY: clean deps finaldeps sclean
 
 LIB_USRSCTP = usrsctp/.built
 LIB_USRSCTP_DIR = ./usrsctp/usrsctplib
@@ -62,3 +62,7 @@ clean:
 
 test: main
 	LD_LIBRARY_PATH=vendor/build/ ./main
+
+
+sclean:
+	rm -f *.o
