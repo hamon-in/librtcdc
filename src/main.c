@@ -96,7 +96,7 @@ int main() {
     parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, (gchar *)dec_remote_sdp_offer);
     if (parse_offer >= 0) {
         offer = rtcdc_generate_offer_sdp(rtcdc_pc);
-        b_offer = g_base64_encode(offer, strlen(offer));
+        b_offer = g_base64_encode((guchar *)offer, strlen(offer));
         printf("\nNew Offer SDP: \n%s\n", b_offer);
         g_free(offer);
         g_free(b_offer);
