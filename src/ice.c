@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <valgrind/memcheck.h>
 #include "common.h"
 #include "util.h"
 #include "dtls.h"
@@ -79,7 +80,9 @@ data_received_cb(NiceAgent *agent, guint stream_id, guint component_id,
   } else {
     unsigned char buf[BUFFER_SIZE];
     int nbytes = SSL_read(dtls->ssl, buf, sizeof buf);
+
     if (nbytes > 0) {
+      VALGRIND_MAKE_MEM_DEFINED(buf, nbytes);
       g_mutex_lock(&sctp->sctp_mutex);
       BIO_write(sctp->incoming_bio, buf, nbytes);
       g_mutex_unlock(&sctp->sctp_mutex);
