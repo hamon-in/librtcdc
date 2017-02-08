@@ -112,7 +112,7 @@ int main() {
     dec_remote_candidate = g_base64_decode(remote_candidate, &dec_candidate_len);
     //printf("\nDecoded remote candidate:\n%s\n", dec_remote_candidate);
     g_free(remote_candidate);
-    parse_candidate = rtcdc_parse_candidate_sdp(rtcdc_pc, dec_remote_candidate);
+    parse_candidate = rtcdc_parse_candidate_sdp(rtcdc_pc, (gchar *)dec_remote_candidate);
     if (parse_candidate > 0) {
         printf("\nValid candidates!\n");
     } else {
