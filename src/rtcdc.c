@@ -17,6 +17,21 @@
 #include "rtcdc.h"
 #include "common.h"
 
+// Custom functions for test
+void
+dump_ice(struct ice_transport *ice)
+{
+
+  printf("NiceAgent %p\n", ice->agent);
+  printf("guint %d\n", ice->stream_id);
+  printf("loop %p\n", ice->loop);
+  printf("Gathering %d\n", ice->gathering_done);
+  printf("Negotiation %d\n", ice->negotiation_done);
+}
+
+
+//Custom functions end
+
 static struct dtls_context *g_dtls_context = NULL;
 static int g_context_ref = 0;
 
@@ -454,6 +469,7 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   GThread *thread_startup = g_thread_new("Startup thread", &startup_thread, peer);
 
   struct ice_transport *ice = peer->transport->ice;
+  //dump_ice(ice);
   g_main_loop_run(ice->loop);
   peer->exit_thread = TRUE;
 
@@ -461,7 +477,9 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   g_thread_join(thread_sctp);
   g_thread_join(thread_startup);
 
-  g_thread_unref(thread_ice);
-  g_thread_unref(thread_sctp);
-  g_thread_unref(thread_startup);
+  /* g_thread_unref(thread_ice); */
+  /* g_thread_unref(thread_sctp); */
+  /* g_thread_unref(thread_startup); */
 }
+
+  
