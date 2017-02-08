@@ -45,7 +45,7 @@ int main() {
     int dc_open = 0;
     struct rtcdc_peer_connection *rtcdc_pc;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
-        printf("\nData received: %s\n", data);
+        printf("\nData received: %s\n", (char *)data);
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel opened.\n");
