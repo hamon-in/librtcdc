@@ -78,9 +78,9 @@ int main() {
     offer = rtcdc_generate_offer_sdp(rtcdc_pc);
     lCSDP = rtcdc_generate_local_candidate_sdp(rtcdc_pc);
     gchar *b_offer=NULL, *b_lCSDP=NULL;
-    b_offer = g_base64_encode(offer, strlen(offer));
+    b_offer = g_base64_encode((guchar *)offer, strlen(offer));
     printf("\nOffer SDP: \n%s\n", b_offer);
-    b_lCSDP = g_base64_encode(lCSDP, strlen(lCSDP));
+    b_lCSDP = g_base64_encode((guchar *)lCSDP, strlen(lCSDP));
     printf("\nLocal Candidate: \n%s\n", b_lCSDP);
     sleep(3);
     int parse_offer= 0, parse_candidate= 0;
