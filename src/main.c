@@ -137,7 +137,7 @@ int main() {
                     g_free(message);
                     g_free(dec_remote_sdp_offer);
                     g_free(dec_remote_candidate);
-                    rtcdc_destroy_peer_connection(rtcdc_pc);
+                    //rtcdc_destroy_peer_connection(rtcdc_pc);
                     exit(0);
                 }
             }
