@@ -32,12 +32,12 @@ gchar* getlines() {
   return lines;
 }
 
-void* rtcdc_e_loop(void *peer) {
+void rtcdc_e_loop(void *peer) {
     struct rtcdc_peer_connection *speer;
     speer = (struct rtcdc_peer_connection *) peer;
     rtcdc_loop(speer);
     free(speer);
-    return NULL;
+    //return NULL;
 }
 
 
@@ -121,7 +121,7 @@ int main() {
         _exit(1);
     }
     pthread_t tid;
-    pthread_create(&tid, NULL, rtcdc_e_loop, (void *) rtcdc_pc);
+    pthread_create(&tid, NULL, (void *)rtcdc_e_loop, (void *) rtcdc_pc);
     while (1 == 1)
     {
         if (rtcdc_pc->initialized > 0) {
