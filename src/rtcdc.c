@@ -123,12 +123,17 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
   char buf[INET_ADDRSTRLEN];
   if (stun_server != NULL && strcmp(stun_server, "") != 0) {
     memset(buf, 0, sizeof buf);
-    struct addrinfo hints, *servinfo;
+    struct addrinfo hints, *servinfo=NULL;
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     
     if ((getaddrinfo(stun_server, NULL, &hints, &servinfo)) != 0)
-      return NULL;
+      {
+        if (servinfo != NULL)
+          freeaddrinfo(servinfo);
+        return NULL;
+      }
+    
 
     struct sockaddr_in *sa = (struct sockaddr_in *)servinfo->ai_addr;
     inet_ntop(AF_INET, &(sa->sin_addr), buf, INET_ADDRSTRLEN);
@@ -139,8 +144,9 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
     (struct rtcdc_peer_connection *)calloc(1, sizeof *peer);
   if (peer == NULL)
     return NULL;
-  if (stun_server)
+  if (stun_server){
     peer->stun_server = strdup(buf);
+  }
   peer->stun_port = stun_port > 0 ? stun_port : 3478;
   peer->on_channel = on_channel;
   peer->on_candidate = on_candidate;
@@ -149,6 +155,8 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
 
   return peer;
 }
+
+
 
 void
 rtcdc_destroy_peer_connection(struct rtcdc_peer_connection *peer)
