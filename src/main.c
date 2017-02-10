@@ -36,8 +36,6 @@ void rtcdc_e_loop(void *peer) {
     struct rtcdc_peer_connection *speer;
     speer = (struct rtcdc_peer_connection *) peer;
     rtcdc_loop(speer);
-    free(speer);
-    //return NULL;
 }
 
 
