@@ -80,19 +80,23 @@ int main() {
     lCSDP = rtcdc_generate_local_candidate_sdp(rtcdc_pc);
     gchar *b_offer=NULL, *b_lCSDP=NULL;
     b_offer = g_base64_encode((guchar *)offer, strlen(offer));
+    free(offer);
     printf("\nOffer SDP: \n%s\n", b_offer);
+    g_free(b_offer);
     b_lCSDP = g_base64_encode((guchar *)lCSDP, strlen(lCSDP));
+    free(lCSDP);
     printf("\nLocal Candidate: \n%s\n", b_lCSDP);
+    g_free(b_lCSDP);
     sleep(3);
     int parse_offer= 0, parse_candidate= 0;
     guchar *dec_remote_sdp_offer=NULL, *dec_remote_candidate=NULL;
     gsize dec_remote_sdp_len = 0, dec_candidate_len= 0;
 
     printf("\n Enter remote SDP offer (press enter twice): \n");
-    gchar *remote_sdp_offer=NULL, *remote_candidate=NULL;
-    remote_sdp_offer = getlines();
+    gchar *remote_sdp_offer=NULL, *remote_candidate=NULL; size_t len = 0;
+    getline(&remote_sdp_offer, &len, stdin);
     dec_remote_sdp_offer = g_base64_decode(remote_sdp_offer, &dec_remote_sdp_len);
-    g_free(remote_sdp_offer);
+    g_free(remote_sdp_offer); len = 0;
     //printf("\nDecoded remote SDP:\n%s\n", dec_remote_sdp_offer);
     parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc, (gchar *)dec_remote_sdp_offer);
     if (parse_offer >= 0) {
