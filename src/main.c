@@ -132,15 +132,22 @@ int main() {
                 channel = rtcdc_pc->channels[0];
                 if (channel->state > RTCDC_CHANNEL_STATE_CLOSED) {
                     printf("\nEnter a message (press enter twice): ");
-                    gchar* message;
-                    message = getlines();
+                    gchar* message = NULL;
+                    getline(&message, &len, stdin);
                     rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message));
                     printf("\nMessage sent!\n");
+                    char *q_message = "quit\n";
+                    if (strcmp((char *)message, (char *)q_message) == 0)
+                      {
+                        printf("Quit Recieved");
+                        g_free(message);
+                        g_free(dec_remote_sdp_offer);
+                        g_free(dec_remote_candidate);
+                        free(user_data);
+                        rtcdc_destroy_peer_connection(rtcdc_pc);
+                        exit(0);
+                      }
                     g_free(message);
-                    g_free(dec_remote_sdp_offer);
-                    g_free(dec_remote_candidate);
-                    //rtcdc_destroy_peer_connection(rtcdc_pc);
-                    exit(0);
                 }
             }
         }
