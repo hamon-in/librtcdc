@@ -32,25 +32,11 @@
 /*   return lines; */
 /* } */
 
-struct args {
-  struct rtcdc_peer_connection * peer;
-  int exit_flag;
-};
-
-
 void rtcdc_e_loop(void *args) {
-  struct args *args1;
-  args1 = (struct args *) args;
   struct rtcdc_peer_connection *speer;
-  speer = (struct rtcdc_peer_connection *)args1->peer;
-    rtcdc_loop(speer);
-    if ((int)args1->exit_flag == 1) {
-        rtcdc_destroy_peer_connection(speer);
-        pthread_exit(&args1->exit_flag);
-    }
+  speer = (struct rtcdc_peer_connection *)args;
+  rtcdc_loop(speer);
 }
-
-
 
 int main() {
     int dc_open = 0;
@@ -135,11 +121,8 @@ int main() {
         _exit(1);
     }
     pthread_t tid;
-    struct args *arguments = (struct args *)calloc(1, sizeof(*arguments));
-    arguments->peer = rtcdc_pc;
-    arguments->exit_flag = 0;
     
-    pthread_create(&tid, NULL, (void *)rtcdc_e_loop, (void *)arguments);
+    pthread_create(&tid, NULL, (void *)rtcdc_e_loop, (void *)rtcdc_pc);
     while (1)
     {
         if (rtcdc_pc->initialized > 0) {
@@ -161,8 +144,6 @@ int main() {
                         g_free(dec_remote_candidate);
                         free(user_data);
                         rtcdc_destroy_peer_connection(rtcdc_pc);
-                        arguments->exit_flag = 1;
-                        free(arguments);
                         exit(0);
                       }
                     g_free(message);
