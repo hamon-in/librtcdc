@@ -31,7 +31,7 @@ int main() {
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
-        if (peer->role == 1) {
+        if (peer->role == RTCDC_PEER_ROLE_SERVER) {
             char label[10];
             snprintf(label, 10, "test-dc-%d", peer->role);
             rtcdc_create_data_channel(peer, label, "", onopen, onmessage, onclose, user_data);
