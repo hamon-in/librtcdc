@@ -15,12 +15,17 @@ void rtcdc_e_loop(void *args) {
 int main() {
 
   pthread_t tid1, tid2; void *res;
+  int response_sent = 0;
     struct rtcdc_peer_connection *rtcdc_pc1, *rtcdc_pc2;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         printf("\nData received: %s\n", (char *)data);
-        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "Response!", 9);
-        rtcdc_destroy_data_channel(channel);
-        //destroy the peer connections and quit from here
+        if (response_sent != 1) {
+            rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "Response!", 9);
+            response_sent = 1;
+        } else {
+            channel->on_close(channel, user_data);
+            //rtcdc_destroy_data_channel(channel);
+        }
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel opened.\n");
@@ -29,13 +34,18 @@ int main() {
     }
     void onclose(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel closed!\n");
+        struct rtcdc_peer_connection* peer;
+        peer = (struct rtcdc_peer_connection *) user_data;
+        if (peer) {
+            rtcdc_destroy_peer_connection(peer);
+        }
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
         if (peer->role == RTCDC_PEER_ROLE_CLIENT) {
             char label[10];
             snprintf(label, 10, "test-dc-%d", peer->role);
-            rtcdc_create_data_channel(peer, label, "", onopen, onmessage, onclose, user_data);
+            rtcdc_create_data_channel(peer, label, "", onopen, onmessage, onclose, (void *)peer);
         }
     }
     
