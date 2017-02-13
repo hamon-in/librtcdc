@@ -6,16 +6,42 @@
 #include<glib.h>
 #include<pthread.h>
 
-void rtcdc_e_loop(void *peer) {
-    struct rtcdc_peer_connection *speer;
-    speer = (struct rtcdc_peer_connection *) peer;
+struct args {
+  struct rtcdc_peer_connection * peer;
+  int exit_flag;
+};
+
+
+void rtcdc_e_loop(void *args) {
+  struct args *args1;
+  args1 = (struct args *) args;
+  struct rtcdc_peer_connection *speer;
+  speer = (struct rtcdc_peer_connection *)args1->peer;
     rtcdc_loop(speer);
+    if ((int)args1->exit_flag == 1) {
+      rtcdc_destroy_peer_connection(speer);
+      int ev = args1->exit_flag;
+      free(args1);
+      pthread_exit(&ev);
+    }
 }
 
+
+
 int main() {
+
+  pthread_t tid1, tid2; void *res;
+    struct args *arguments1 = (struct args *)calloc(1, sizeof(*arguments1));
+    arguments1->exit_flag = 0;
+    struct args *arguments2 = (struct args *)calloc(1, sizeof(*arguments2));
+    arguments2->exit_flag = 0;
+
+    
     struct rtcdc_peer_connection *rtcdc_pc1, *rtcdc_pc2;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         printf("\nData received: %s\n", (char *)data);
+        arguments1->exit_flag = 1;
+        arguments2->exit_flag = 1;
         rtcdc_destroy_data_channel(channel);
         //destroy the peer connections and quit from here
     }
@@ -49,6 +75,9 @@ int main() {
     rtcdc_pc2 = rtcdc_create_peer_connection(onchannel, oncandidate, onconnect,
             "stun.services.mozilla.com", 3478, user_data);
 
+
+    arguments1->peer = rtcdc_pc1;
+    arguments2->peer = rtcdc_pc2;
     char *offer1=NULL, *offer2=NULL, *lCSDP1=NULL, *lCSDP2=NULL;
     offer1 = rtcdc_generate_offer_sdp(rtcdc_pc1);
 
@@ -87,11 +116,15 @@ int main() {
     }
 
 
-    pthread_t tid1, tid2; void *res;
-    pthread_create(&tid1, NULL, (void *)rtcdc_e_loop, (void *) rtcdc_pc1);
-    pthread_create(&tid2, NULL, (void *)rtcdc_e_loop, (void *) rtcdc_pc2);
+   
+   
+    
+    pthread_create(&tid1, NULL, (void *)rtcdc_e_loop, (void *) arguments1);
+    pthread_create(&tid2, NULL, (void *)rtcdc_e_loop, (void *) arguments2);
     pthread_join(tid1, &res);
     pthread_join(tid2, &res);
+
+    
 
     return 0;
 }
