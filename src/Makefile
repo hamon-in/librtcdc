@@ -49,6 +49,9 @@ $(LIB_NICE):
 main: finaldeps 
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
+localhost: finaldeps
+	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) localhost.c -o localhost
+
 $(TARGET): $(OBJECTS) deps
 	$(CC) $(CFLAGS) -shared -fPIC $(LDFLAGS) $(OBJECTS) -o $@
 
@@ -60,9 +63,8 @@ clean:
 	rm $(LIB_NICE) $(LIB_USRSCTP)
 	rm -f *.o *.so *.dylib *.a example  && cd usrsctp && make clean && cd ..
 
-test: main
-	LD_LIBRARY_PATH=vendor/build/ ./main
-
+test: localhost
+	LD_LIBRARY_PATH=vendor/build/ ./localhost
 
 sclean:
 	rm -f *.o
