@@ -18,6 +18,7 @@ int main() {
     struct rtcdc_peer_connection *rtcdc_pc1, *rtcdc_pc2;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         printf("\nData received: %s\n", (char *)data);
+        rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "Response!", 9);
         rtcdc_destroy_data_channel(channel);
         //destroy the peer connections and quit from here
     }
@@ -31,7 +32,7 @@ int main() {
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
-        if (peer->role == RTCDC_PEER_ROLE_SERVER) {
+        if (peer->role == RTCDC_PEER_ROLE_CLIENT) {
             char label[10];
             snprintf(label, 10, "test-dc-%d", peer->role);
             rtcdc_create_data_channel(peer, label, "", onopen, onmessage, onclose, user_data);
