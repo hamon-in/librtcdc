@@ -340,10 +340,17 @@ open_channel_err:
 void
 rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel)
 {
+    printf("destroy DC");
   if (channel == NULL)
     return;
+  if (channel->on_close) {
+      printf("on close!");
+      channel->on_close(channel, channel->user_data);
+      free(channel->on_close);
+      channel->on_close = NULL;
+  }
+  // todo: close channe
 
-  // todo: close channel
   if (channel->label)
     free(channel->label);
   if (channel->protocol)
