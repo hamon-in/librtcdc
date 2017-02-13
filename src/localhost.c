@@ -13,7 +13,6 @@ void rtcdc_e_loop(void *peer) {
 }
 
 int main() {
-    int dc_open = 0;
     struct rtcdc_peer_connection *rtcdc_pc1, *rtcdc_pc2;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         printf("\nData received: %s\n", (char *)data);
@@ -22,13 +21,11 @@ int main() {
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel opened.\n");
-        dc_open = 1;
         char *message = "Hello"; //t
         rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message));
     }
     void onclose(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel closed!\n");
-        dc_open = 0;
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
