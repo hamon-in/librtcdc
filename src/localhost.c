@@ -55,7 +55,11 @@ int main() {
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
-        rtcdc_create_data_channel(peer, "test-dc", "", onopen, onmessage, onclose, user_data);
+        if (peer->role == 1) {
+            char label[10];
+            snprintf(label, 10, "test-dc-%d", peer->role);
+            rtcdc_create_data_channel(peer, label, "", onopen, onmessage, onclose, user_data);
+        }
     }
     
     void onchannel(struct rtcdc_peer_connection *peer, struct rtcdc_data_channel *channel, void *user_data) {
