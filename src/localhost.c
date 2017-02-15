@@ -13,33 +13,27 @@ void rtcdc_e_loop(void *args) {
 }
 
 int main() {
-
-  pthread_t tid1, tid2; void *res;
+  pthread_t tid1, tid2; void *res1, *res2;
   int response_sent = 0;
     struct rtcdc_peer_connection *rtcdc_pc1, *rtcdc_pc2;
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
+        struct rtcdc_peer_connection *peer;
+        peer = (struct rtcdc_peer_connection *) user_data;
         printf("\nData received: %s\n", (char *)data);
         if (response_sent != 1) {
             rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, "Response!", 9);
             response_sent = 1;
         } else {
-            channel->on_close(channel, user_data);
-            //rtcdc_destroy_data_channel(channel);
+            rtcdc_destroy_peer_connection(peer);
         }
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel opened.\n");
-        char *message = "Hello"; //t
+        char *message = "Hello";
         rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message));
     }
     void onclose(struct rtcdc_data_channel *channel, void *user_data) {
-        channel->on_close = NULL;
-        printf("\nDataChannel closed!\n");
-        struct rtcdc_peer_connection* peer;
-        peer = (struct rtcdc_peer_connection *) user_data;
-        if (peer) {
-            rtcdc_destroy_peer_connection(peer);
-        }
+        printf("\nDataChannel closed\n");
     }
     void onconnect(struct rtcdc_peer_connection *peer, void *user_data) {
         printf("\nPeer Connection Established.\n");
@@ -73,7 +67,6 @@ int main() {
     lCSDP1 = rtcdc_generate_local_candidate_sdp(rtcdc_pc1);
     lCSDP2 = rtcdc_generate_local_candidate_sdp(rtcdc_pc2);
 
-    sleep(3);
     int parse_offer = 0, parse_candidate = 0;
     parse_offer = rtcdc_parse_offer_sdp(rtcdc_pc2, offer1);
     free(offer1);
@@ -106,8 +99,10 @@ int main() {
 
     pthread_create(&tid1, NULL, (void *)rtcdc_e_loop, (void *) rtcdc_pc1);
     pthread_create(&tid2, NULL, (void *)rtcdc_e_loop, (void *) rtcdc_pc2);
-    pthread_join(tid1, &res);
-    pthread_join(tid2, &res);
-
+    pthread_join(tid1, &res1);
+    printf("\nDestroying second peer..");
+    rtcdc_destroy_peer_connection(rtcdc_pc2);
+    pthread_join(tid2, &res2);
+    printf("\nDone!\n");
     return 0;
 }
