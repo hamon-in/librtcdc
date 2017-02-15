@@ -33,6 +33,7 @@ int main() {
         rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message));
     }
     void onclose(struct rtcdc_data_channel *channel, void *user_data) {
+        channel->on_close = NULL;
         printf("\nDataChannel closed!\n");
         struct rtcdc_peer_connection* peer;
         peer = (struct rtcdc_peer_connection *) user_data;
