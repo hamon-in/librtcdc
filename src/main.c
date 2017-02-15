@@ -6,37 +6,15 @@
 #include<glib.h>
 #include<pthread.h>
 
-/* gchar* getlines() { */
-/*   int i; */
-/*   size_t len = 0, linesize, inc_size; */
-/*   gchar *line=NULL, *lines=NULL; */
-/*   inc_size = 1; */
-/*   linesize = 2; */
-/*   size_t old_size = 0; */
-/*   while (linesize > 1) { */
-/*     linesize = getline(&line, &len, stdin); */
-/*     if (linesize != 1){ */
-/*     size_t strlength = strlen(line); */
-/*     old_size = inc_size; */
-/*     inc_size += (sizeof(char) * strlength); */
-/*     lines = realloc(lines, inc_size); */
-/*     for (i = 0; i < linesize; i++) { */
-/*       lines[old_size -1 + i] = line[i]; */
-/*     } */
-/*     }else { */
-/*       lines[old_size -1 +i] = '\0'; */
-/*       break; */
-/*     } */
-/*   } */
-/*   free(line); */
-/*   return lines; */
-/* } */
 
-void rtcdc_e_loop(void *args) {
-  struct rtcdc_peer_connection *speer;
-  speer = (struct rtcdc_peer_connection *)args;
-  rtcdc_loop(speer);
+void rtcdc_e_loop(void *peer) {
+    struct rtcdc_peer_connection *speer;
+    speer = (struct rtcdc_peer_connection *) peer;
+    rtcdc_loop(speer);
+    
 }
+
+
 
 int main() {
     int dc_open = 0;
@@ -121,7 +99,6 @@ int main() {
         _exit(1);
     }
     pthread_t tid;
-    
     pthread_create(&tid, NULL, (void *)rtcdc_e_loop, (void *)rtcdc_pc);
     while (1)
     {
@@ -144,7 +121,7 @@ int main() {
                         g_free(dec_remote_candidate);
                         free(user_data);
                         rtcdc_destroy_peer_connection(rtcdc_pc);
-                        exit(0);
+                        break;
                       }
                     g_free(message);
                 }
@@ -152,5 +129,6 @@ int main() {
         }
         sleep(1);
     }
+    pthread_join(tid, NULL);
     return 0;
 }
