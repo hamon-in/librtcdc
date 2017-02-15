@@ -482,7 +482,7 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   GThread *thread_startup = g_thread_new("Startup thread", &startup_thread, peer);
 
   struct ice_transport *ice = peer->transport->ice;
-  //dump_ice(ice);
+ 
   g_main_loop_run(ice->loop);
   peer->exit_thread = TRUE;
 
