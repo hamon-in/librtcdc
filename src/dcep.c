@@ -56,7 +56,7 @@ handle_rtcdc_open_request(struct rtcdc_peer_connection *peer, uint16_t sid, void
     return;
   ch->sctp = peer->transport->sctp;
   peer->channels[i] = ch;
-
+  
   if (peer->on_channel)
     peer->on_channel(peer, ch, peer->user_data);
 
@@ -67,6 +67,7 @@ handle_rtcdc_open_request(struct rtcdc_peer_connection *peer, uint16_t sid, void
 #ifdef DEBUG_SCTP
     fprintf(stderr, "sending DCEP ack failed\n");
 #endif
+  free(ch);
   }
 }
 
