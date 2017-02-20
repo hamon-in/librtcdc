@@ -30,7 +30,9 @@ dump_ice(struct ice_transport *ice)
 }
 
 
+
 //Custom functions end
+
 
 static struct dtls_context *g_dtls_context = NULL;
 static int g_context_ref = 0;
@@ -49,6 +51,7 @@ create_rtcdc_transport(struct rtcdc_peer_connection *peer, int role)
   peer->role = role;
 
   if (g_dtls_context == NULL) {
+    printf("I am getting created here!!!\n");
     g_dtls_context = create_dtls_context("librtcdc");
     if (g_dtls_context == NULL)
       goto ctx_null_err;
@@ -489,6 +492,9 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   g_thread_join(thread_ice);
   g_thread_join(thread_sctp);
   g_thread_join(thread_startup);
+  printf("Threads joined \n");
+  g_main_loop_quit(ice->loop);
+  g_main_loop_unref(ice->loop);
 
   /* g_thread_unref(thread_ice); */
   /* g_thread_unref(thread_sctp); */
