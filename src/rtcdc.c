@@ -181,7 +181,6 @@ rtcdc_destroy_peer_connection(struct rtcdc_peer_connection *peer)
       rtcdc_destroy_data_channel(peer->channels[i]);
     }
   }
-
   free(peer);
   peer = NULL;
 }
@@ -493,8 +492,7 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   g_thread_join(thread_sctp);
   g_thread_join(thread_startup);
   printf("Threads joined \n");
-  g_main_loop_quit(ice->loop);
-  g_main_loop_unref(ice->loop);
+  
 
   /* g_thread_unref(thread_ice); */
   /* g_thread_unref(thread_sctp); */
