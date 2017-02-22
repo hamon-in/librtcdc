@@ -518,3 +518,16 @@
     ...
     fun:nice_agent_gather_candidates
 }
+
+###############################
+####### ice.c #################
+###############################
+
+# False positive. 
+
+{
+    data_received_cb
+    Memcheck:Leak
+    ...
+    fun:data_received_cb
+}
