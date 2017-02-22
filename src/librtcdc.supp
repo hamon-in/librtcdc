@@ -499,3 +499,22 @@
     ...
     fun:gaih_inet
 }
+
+
+###############################
+####### LIBNICE ###############
+###############################
+
+# These leaks are fixed in later commits after the latest version of libnice
+# was released. The commit id is 1778f790087ab7663975ea466527c252eaccc5e3 of https://github.com/libnice/libnice
+# However you need to have a version above glib version 2.44 or above to compile these commits and hence wouldn't
+# work on debian jessie.
+
+#Genuine Leak 3 Nos.
+
+{
+    nice_agent_gather_candidates
+    Memcheck:Leak
+    ...
+    fun:nice_agent_gather_candidates
+}
