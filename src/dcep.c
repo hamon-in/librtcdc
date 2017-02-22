@@ -67,7 +67,6 @@ handle_rtcdc_open_request(struct rtcdc_peer_connection *peer, uint16_t sid, void
 #ifdef DEBUG_SCTP
     fprintf(stderr, "sending DCEP ack failed\n");
 #endif
-  free(ch);
   }
 }
 

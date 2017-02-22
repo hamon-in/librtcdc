@@ -355,6 +355,9 @@ rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel)
     free(channel->label);
   if (channel->protocol)
     free(channel->protocol);
+
+  free(channel);
+  channel = NULL;
 }
 
 int
