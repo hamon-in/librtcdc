@@ -1,0 +1,6 @@
+[submodule "libnice"]
+    path = src/libnice
+    url = https://github.com/libnice/libnice.git
+[submodule "src/libnice"]
+	path = src/libnice
+	url = https://github.com/libnice/libnice.git
