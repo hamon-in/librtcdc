@@ -7,20 +7,23 @@ RUN apt-get install -qy netcat
 RUN apt-get install -qy python
 RUN apt-get install -qy python-dev
 RUN apt-get install -qy python-pip
-
-RUN apt-get install -qy libglib2.0-dev
-RUN apt-get install -qy libnice-dev
 RUN apt-get install -qy libtool
 RUN apt-get install -qy autotools-dev
 RUN apt-get install -qy automake
 RUN apt-get install -qy gtk-doc-tools
 RUN apt-get install -qy libssl-dev
-
+RUN apt-get install -qy git
+RUN apt-get install -qy libffi-dev
+RUN apt-get install -qy libmount-dev
+RUN apt-get install -qy libpcre3-dev
 RUN pip install cffi
 
 ADD ./ /psl-librtcdc
 WORKDIR /psl-librtcdc
-RUN cd src && make
+RUN git clone https://github.com/GNOME/glib.git && cd glib && git checkout 36966334ead02df864776bf42bb81712254e3a20 && ./autogen.sh --prefix=/usr && make install
+RUN rm -rf /psl-librtcdc/glib
+
+RUN cd /psl-librtcdc/src && make
 ENV LD_LIBRARY_PATH /psl-librtcdc/src/vendor/build
 RUN cd python && python setup.py install
 
