@@ -13,3 +13,4 @@ main
 .dirstamp
 *.pyc
 *.egg-info/
+python/build/
