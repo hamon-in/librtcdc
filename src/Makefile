@@ -40,13 +40,13 @@ finaldeps: $(TARGET)
 	cp $(TARGET) vendor/build
 
 $(LIB_USRSCTP): 
-	cd usrsctp && ./bootstrap && env -u CFLAGS  ./configure && make
+	cd usrsctp && ./bootstrap && env -u CFLAGS  ./configure && make -j$(nproc --all)
 	touch usrsctp/.built
 
 $(LIB_NICE): 
 	cd libnice && \
 	env -u CFLAGS ./autogen.sh && \
-	env -u CFLAGS ./configure && make 
+	env -u CFLAGS ./configure && make -j$(nproc --all)
 	touch libnice/.built
 
 main: finaldeps 
