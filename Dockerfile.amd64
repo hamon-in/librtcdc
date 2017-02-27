@@ -4,9 +4,9 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN apt-get install -qy iputils-ping
 RUN apt-get install -qy netcat
-RUN apt-get install -qy python
-RUN apt-get install -qy python-dev
-RUN apt-get install -qy python-pip
+RUN apt-get install -qy python3
+RUN apt-get install -qy python3-dev
+RUN apt-get install -qy python3-pip
 RUN apt-get install -qy libtool
 RUN apt-get install -qy autotools-dev
 RUN apt-get install -qy automake
@@ -16,7 +16,7 @@ RUN apt-get install -qy git
 RUN apt-get install -qy libffi-dev
 RUN apt-get install -qy libmount-dev
 RUN apt-get install -qy libpcre3-dev
-RUN pip install cffi
+RUN pip3 install cffi
 
 ADD ./ /psl-librtcdc
 WORKDIR /psl-librtcdc
@@ -25,7 +25,7 @@ RUN rm -rf /psl-librtcdc/glib
 
 RUN cd /psl-librtcdc/src && make
 ENV LD_LIBRARY_PATH /psl-librtcdc/src/vendor/build
-RUN cd python && python setup.py install
+RUN cd python && python3 setup.py install
 
 WORKDIR /psl-librtcdc/python
-CMD python ./dc_test.py
+CMD python3 ./dc_test.py
