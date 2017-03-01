@@ -35,7 +35,6 @@ create_rtcdc_transport(struct rtcdc_peer_connection *peer, int role)
   peer->role = role;
 
   if (g_dtls_context == NULL) {
-    printf("I am getting created here!!!\n");
     g_dtls_context = create_dtls_context("librtcdc");
     if (g_dtls_context == NULL)
       goto ctx_null_err;
