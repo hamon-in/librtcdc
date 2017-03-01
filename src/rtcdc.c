@@ -17,6 +17,7 @@
 #include "rtcdc.h"
 #include "common.h"
 
+
 static struct dtls_context *g_dtls_context = NULL;
 static int g_context_ref = 0;
 
@@ -34,6 +35,7 @@ create_rtcdc_transport(struct rtcdc_peer_connection *peer, int role)
   peer->role = role;
 
   if (g_dtls_context == NULL) {
+    printf("I am getting created here!!!\n");
     g_dtls_context = create_dtls_context("librtcdc");
     if (g_dtls_context == NULL)
       goto ctx_null_err;
@@ -108,12 +110,17 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
   char buf[INET_ADDRSTRLEN];
   if (stun_server != NULL && strcmp(stun_server, "") != 0) {
     memset(buf, 0, sizeof buf);
-    struct addrinfo hints, *servinfo;
+    struct addrinfo hints, *servinfo=NULL;
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     
     if ((getaddrinfo(stun_server, NULL, &hints, &servinfo)) != 0)
-      return NULL;
+      {
+        if (servinfo != NULL)
+          freeaddrinfo(servinfo);
+        return NULL;
+      }
+    
 
     struct sockaddr_in *sa = (struct sockaddr_in *)servinfo->ai_addr;
     inet_ntop(AF_INET, &(sa->sin_addr), buf, INET_ADDRSTRLEN);
@@ -124,8 +131,9 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
     (struct rtcdc_peer_connection *)calloc(1, sizeof *peer);
   if (peer == NULL)
     return NULL;
-  if (stun_server)
+  if (stun_server){
     peer->stun_server = strdup(buf);
+  }
   peer->stun_port = stun_port > 0 ? stun_port : 3478;
   peer->on_channel = on_channel;
   peer->on_candidate = on_candidate;
@@ -134,6 +142,8 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
 
   return peer;
 }
+
+
 
 void
 rtcdc_destroy_peer_connection(struct rtcdc_peer_connection *peer)
@@ -155,7 +165,6 @@ rtcdc_destroy_peer_connection(struct rtcdc_peer_connection *peer)
       rtcdc_destroy_data_channel(peer->channels[i]);
     }
   }
-
   free(peer);
   peer = NULL;
 }
@@ -319,12 +328,20 @@ rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel)
 {
   if (channel == NULL)
     return;
+  if (channel->on_close) {
+      printf("\nCalling on_close!\n");
+      channel->on_close(channel, channel->user_data);
+      channel->on_close = NULL;
+  }
+  // todo: close channe
 
-  // todo: close channel
   if (channel->label)
     free(channel->label);
   if (channel->protocol)
     free(channel->protocol);
+
+  free(channel);
+  channel = NULL;
 }
 
 int
@@ -454,14 +471,19 @@ rtcdc_loop(struct rtcdc_peer_connection *peer)
   GThread *thread_startup = g_thread_new("Startup thread", &startup_thread, peer);
 
   struct ice_transport *ice = peer->transport->ice;
+ 
   g_main_loop_run(ice->loop);
   peer->exit_thread = TRUE;
 
   g_thread_join(thread_ice);
   g_thread_join(thread_sctp);
   g_thread_join(thread_startup);
+  printf("Threads joined \n");
+  
 
-  g_thread_unref(thread_ice);
-  g_thread_unref(thread_sctp);
-  g_thread_unref(thread_startup);
+  /* g_thread_unref(thread_ice); */
+  /* g_thread_unref(thread_sctp); */
+  /* g_thread_unref(thread_startup); */
 }
+
+  

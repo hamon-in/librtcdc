@@ -1,3 +1,17 @@
+# librtcdc suppression file
+
+# This provides a list of suppressions made while running librtcdc on valgrind.
+# This has standard set of suppressions of the glib library provided at https://git.gnome.org/browse/glib/tree/glib.supp
+# Added to them are bugs found for other library functions. Clear demarcation is done when suppressions other than the glib suppressions are added.
+# While running valgrind you can pass this file to Valgrind using --suppressions=path/to/this/file/librtc.supp
+
+
+##################################
+###### GLIB ######################
+##################################
+
+
+
 {
 	gnutls-init-calloc
 	Memcheck:Leak
@@ -256,7 +270,6 @@
 	fun:g_variant_unref
 }
 
-# TODO: haven't checked these entirely rigorously
 {
 	g-unix-signals-main
 	drd:ConflictingAccess
@@ -305,7 +318,6 @@
 	fun:glib_worker_main
 }
 
-# TODO: haven't checked this thoroughly either
 {
 	g-wakeup-acknowledge
 	drd:ConflictingAccess
@@ -313,7 +325,6 @@
 	fun:g_wakeup_acknowledge
 }
 
-# TODO: or these
 {
 	g-type-fundamental
 	drd:ConflictingAccess
@@ -347,7 +358,6 @@
 	fun:g_type_is_a
 }
 
-# TODO: ????
 {
 	g-inet-address-get-type
 	drd:ConflictingAccess
@@ -357,11 +367,6 @@
 	g-inet-address-get-type-helgrind
 	Helgrind:Race
 	fun:g_inet_address_get_type
-}
-{
-	nice-get-type-helgrind
-	Helgrind:Race
-	fun:nice_*_get_type
 }
 
 # From: https://github.com/fredericgermain/valgrind/blob/master/glibc-2.X-drd.supp
@@ -393,7 +398,6 @@
 	fun:g_source_set_ready_time
 }
 
-# TODO: Check this
 {
 	g-source-iter-next
 	Helgrind:Race
@@ -429,15 +433,6 @@
 	fun:g_task_thread_complete
 }
 
-# False positive
-{
-	nice-output-stream-cond
-	Helgrind:Misc
-	...
-	fun:g_cond_clear
-	fun:write_data_unref
-}
-
 # False positive, but I can't explain how (FIXME)
 {
 	g-task-cond
@@ -445,23 +440,6 @@
 	...
 	fun:g_cond_clear
 	fun:g_task_finalize
-}
-
-# TODO FIXME: This is definitely a race.
-# https://bugzilla.gnome.org/show_bug.cgi?id=735754
-{
-	g-tls-base-stream-close
-	Helgrind:Race
-	...
-	fun:g_*_stream_close
-	fun:streams_removed_cb
-}
-{
-	g-tls-base-stream-close2
-	Helgrind:Race
-	...
-	fun:g_*_stream_close
-	fun:g_tls_connection_gnutls_close
 }
 
 # Real race, but is_cancelled() is an opportunistic function anyway
@@ -492,33 +470,6 @@
 	fun:g_source_*_internal
 }
 
-# FIXME: Probably actually a race
-{
-	test-io-stream-common-termination
-	Helgrind:Race
-	fun:check_for_termination
-}
-{
-	test-io-stream-common-wait
-	Helgrind:Race
-	fun:wait_for_start
-}
-{
-	test-io-stream-common-main
-	Helgrind:Race
-	fun:main_thread_cb
-}
-{
-	test-io-stream-common-read
-	Helgrind:Race
-	fun:read_thread_cb
-}
-{
-	test-io-stream-common-write
-	Helgrind:Race
-	fun:write_thread_cb
-}
-
 # False positive
 {
 	g_object_real_dispose
@@ -532,4 +483,51 @@
 	Helgrind:Race
 	...
 	fun:g_object_new_valist
+}
+
+
+###############################
+#### GETADDRINFO() ############
+###############################
+
+#False positives
+#Reference : https://lists.debian.org/debian-glibc/2016/03/msg00243.html
+
+{
+    ignore-glibc-getaddrinfo-cache
+    Memcheck:Leak
+    ...
+    fun:gaih_inet
+}
+
+
+###############################
+####### LIBNICE ###############
+###############################
+
+# These leaks are fixed in later commits after the latest version of libnice
+# was released. The commit id is 1778f790087ab7663975ea466527c252eaccc5e3 of https://github.com/libnice/libnice
+# However you need to have a version above glib version 2.44 or above to compile these commits and hence wouldn't
+# work on debian jessie.
+
+#Genuine Leak 3 Nos.
+
+{
+    nice_agent_gather_candidates
+    Memcheck:Leak
+    ...
+    fun:nice_agent_gather_candidates
+}
+
+###############################
+####### ice.c #################
+###############################
+
+# False positive. 
+
+{
+    data_received_cb
+    Memcheck:Leak
+    ...
+    fun:data_received_cb
 }

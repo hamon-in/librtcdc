@@ -12,10 +12,6 @@
 
 static int g_sctp_ref = 0;
 
-static int interested_events[] = {
-  //...
-};
-
 static int
 sctp_data_ready_cb(void *reg_addr, void *data, size_t len, uint8_t tos, uint8_t set_df)
 {
@@ -40,8 +36,8 @@ sctp_data_received_cb(struct socket *sock, union sctp_sockstore addr, void *data
     return -1;
 
   struct rtcdc_peer_connection *peer = (struct rtcdc_peer_connection *)peer_data;
-  struct rtcdc_transport *transport = peer->transport;
-  struct sctp_transport *sctp = transport->sctp;
+  //struct rtcdc_transport *transport = peer->transport;
+  //struct sctp_transport *sctp = transport->sctp;
 
 #ifdef DEBUG_SCTP
   printf("data of length %zu received on stream %u with SSN %u, TSN %u, PPID %u\n",

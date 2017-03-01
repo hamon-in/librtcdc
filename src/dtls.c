@@ -142,7 +142,10 @@ ctx_err:
     free(context);
     context = NULL;
   }
-
+  EVP_PKEY_free(key);
+  key = NULL;
+  X509_free(cert);
+  cert = NULL;
   return context;
 }
 
