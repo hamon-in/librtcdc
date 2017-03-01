@@ -17,22 +17,6 @@
 #include "rtcdc.h"
 #include "common.h"
 
-// Custom functions for test
-void
-dump_ice(struct ice_transport *ice)
-{
-
-  printf("NiceAgent %p\n", ice->agent);
-  printf("guint %d\n", ice->stream_id);
-  printf("loop %p\n", ice->loop);
-  printf("Gathering %d\n", ice->gathering_done);
-  printf("Negotiation %d\n", ice->negotiation_done);
-}
-
-
-
-//Custom functions end
-
 
 static struct dtls_context *g_dtls_context = NULL;
 static int g_context_ref = 0;
