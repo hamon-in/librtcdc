@@ -20,15 +20,17 @@ class Peer(dc.DataChannel):
         print("entering callback")
         if message[0:4] == "ping":
             print(message)
-            self.send_message("pongpong "+message[4:])
+            self.send_message("pongpong"+message[4:])
             
         elif message[0:4] == "pong":
             print("pong recieved :: {}".format(message))
             m = message.split(" ")
             if m[1] == str(self.ping_counter):
+                t1 = float(m[2])
                 t2 = time.time()
-                print(round_trip_time = t2-t1)
-                self.pings[self.ping_counter] = [t1, t2, rount_trip_time]
+                print("round_trip_time = ", t2-t1)
+                round_trip_time = t2-t1
+                self.pings[self.ping_counter] = [t1, t2, round_trip_time]
                 self.ping_counter += 1
     def onConnect(self, peer):
         self.ping(False)
@@ -69,6 +71,15 @@ if __name__ =="__main__":
     a.register_peer()
     b.register_peer()
     perform_handshake(a, b)
+
+def init ():
+    a = Peer(dcName=uuid.uuid1().hex, send_ping = True)
+    b = Peer(dcName=uuid.uuid1().hex)
+    a.register_peer()
+    b.register_peer()
+    perform_handshake(a, b)
+    return a,b
+
     
 
     
