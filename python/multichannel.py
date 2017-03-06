@@ -14,7 +14,7 @@ class Peer(dc.DataChannel):
         self.candidate = self.generate_local_candidate()
         self.ping_counter = 1
         self.pings = {}
-        self.t = 0
+        self.target = None
     
     def onMessage(self, message):
         print("entering callback")
@@ -25,16 +25,24 @@ class Peer(dc.DataChannel):
         elif message[0:4] == "pong":
             print("pong recieved :: {}".format(message))
             m = message.split(" ")
-            if m[1] == str(self.ping_counter):
+            if int(m[1]) in self.pings.keys():
+                print("entering pong parser")
                 t1 = float(m[2])
                 t2 = time.time()
                 print("round_trip_time = ", t2-t1)
                 round_trip_time = t2-t1
-                self.pings[self.ping_counter] = [t1, t2, round_trip_time]
-                self.ping_counter += 1
+                self.pings[int(m[1])].append(t2)
+                self.pings[int(m[1])].append(round_trip_time)
+                print(self.pings)
+                
     def onConnect(self, peer):
         self.ping(False)
-                              
+
+    def onOpen(self, channel):
+        if self.peer.role == 1 and self.target != None:
+            for i in range(1,10):
+                self.ping_counter = i
+                self.ping(self.target)
 
     def register_peer(self):
         put_register = requests.put("http://127.0.0.1:5000/register", data = {'sdp': self.sdp, 'uuid':self.dcName, 'cand': self.candidate})
@@ -42,8 +50,8 @@ class Peer(dc.DataChannel):
     def ping(self, recipient):
         t1 = time.time()
         self.send_message("ping {} {} {}".format(self.ping_counter, t1, self.dcName))
-        #threading.Thread(target = time_out, args = (20,))
-       
+        self.pings[self.ping_counter] = []
+        self.pings[self.ping_counter].append(t1)
 
 def perform_handshake (peer1, peer2):
     get_target1 = requests.get("http://127.0.0.1:5000/request", params = {'uuid': peer1.dcName})
@@ -68,6 +76,7 @@ def time_out(timeout):
 if __name__ =="__main__":
     a = Peer(dcName=uuid.uuid1().hex, send_ping = True)
     b = Peer(dcName=uuid.uuid1().hex)
+    a.target = b
     a.register_peer()
     b.register_peer()
     perform_handshake(a, b)
@@ -94,53 +103,5 @@ def init ():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-        
-# def create_slave_pool(num=1):
-#     peer_list = []
-#     for i in range(1, num+1):
-#         peer_list.append("peerS{}".format(i))
-#     return peer_list
-
-# def negotiate(peer):
-#     peer.parse_candidates(candidate_sdp_slave)
-#     peer.parse_candidates(candidate_sdp_master)
-
-# def send_ping(peer1, peer2):
-#     peer1.send_message("ping")
-# 	peerM.send_message(message)
-
-# def send_pong(ping_num):
-# 	message = 'pong'*ping_num
-# 	message = uuid + message
-    
-
-# if args.kind == 'master':
-# 	peerM = dc.DataChannel()
-# 	offer_sdp_master = peerM.generate_offer_sdp()
-# 	candidate_sdp_master = peerM.generate_candidate_sdp()
-# 	print(uuid_master = uuid.uuid1())
-# 	put_register = requests.put(args.sigServer + "/register", data = {'kind': 'master', 'sdp': offer_sdp_master, 'uuid': uuid_master.hex, 'cand': candidate_sdp_master})cw
-
-# if args.kind == 'slave':
-# 	slave_pool = create_slave_pool(args.poolsize)
-# 	for slave in slave_pool:
-# 		peerS = dc.DataChannel()
-		
-# 		dict_master = json.dumps(get_target)
-#                 offer_sdp_slave = peerS.parse_offer_sdp(str(dict_master['sdp']))
-# 		candidate_sdp_slave = peerS.generate_candidate_sdp()
-# 		uuid_slave = uuid.uuid1()
-# 		put_r = requests.put(args.sigServer + "/register", data = {'kind': 'slave', 'sdp': offer_sdp_slave, 'uuid': uuid_slave.hex, 'cand': candidate_sdp_slave})
 
 
