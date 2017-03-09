@@ -25,33 +25,36 @@ class Peer(dc.DataChannel):
         elif message[0:4] == "pong":
             print("pong recieved :: {}".format(message))
             m = message.split(" ")
-            if int(m[1]) in self.pings.keys():
-                print("entering pong parser")
-                t1 = float(m[2])
-                t2 = time.time()
-                print("round_trip_time = ", t2-t1)
-                round_trip_time = t2-t1
-                self.pings[int(m[1])].append(t2)
-                self.pings[int(m[1])].append(round_trip_time)
-                print(self.pings)
+            #if int(m[1]) in self.pings.keys():
+            print("entering pong parser")
+            t1 = float(m[2])
+            t2 = time.time()
+            print(t2)
+            print("round_trip_time = ", t2-t1)
+            round_trip_time = t2-t1
+            # self.pings[int(m[1])] = round_trip_time
+            # self.pings[int(m[1])].append(round_trip_time)
+            print(self.pings)
                 
     def onConnect(self, peer):
-        self.ping(False)
+        pass
 
     def onOpen(self, channel):
         if self.peer.role == 1 and self.target != None:
-            for i in range(1,10):
-                self.ping_counter = i
-                self.ping(self.target)
+            for i in range(1,40):
+                ping_count = i
+                self.ping(self.target, ping_count)
+
+                
 
     def register_peer(self):
         put_register = requests.put("http://127.0.0.1:5000/register", data = {'sdp': self.sdp, 'uuid':self.dcName, 'cand': self.candidate})
                               
-    def ping(self, recipient):
+    def ping(self, recipient, ping_count):
         t1 = time.time()
-        self.send_message("ping {} {} {}".format(self.ping_counter, t1, self.dcName))
-        self.pings[self.ping_counter] = []
-        self.pings[self.ping_counter].append(t1)
+        self.send_message("ping {} {} {}".format(ping_count, t1, self.dcName))
+        # self.pings[ping_count] = []
+        # self.pings[ping_count].append(t1)
 
 def perform_handshake (peer1, peer2):
     get_target1 = requests.get("http://127.0.0.1:5000/request", params = {'uuid': peer1.dcName})
@@ -62,7 +65,6 @@ def perform_handshake (peer1, peer2):
     peer1.parse_offer_sdp(new_offer_sdp)
     a = peer1.parse_candidates(dict_peer2['cand'])
     b = peer2.parse_candidates(dict_peer1['cand'])
-    print("hand")
     if (a and b):
         print("Handshake done")
         return True
