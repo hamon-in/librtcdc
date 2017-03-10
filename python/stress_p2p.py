@@ -57,7 +57,7 @@ def onOpen(channel):
     #peer.t.start()
     size = 1024
     if (peer.peer.role == 1):
-        for i in range(1, 3):
+        for i in range(2, 3):
             size **= i
             send_random_payload(size)
 
