@@ -24,7 +24,7 @@ WORKDIR /psl-librtcdc
 
 RUN cd /psl-librtcdc/src && make
 ENV LD_LIBRARY_PATH /psl-librtcdc/src/vendor/build
-RUN cd python && python3 setup.py install
+RUN cd python && python3 setup.py build
 
 WORKDIR /psl-librtcdc/python
 CMD python3 ./dc_test.py
