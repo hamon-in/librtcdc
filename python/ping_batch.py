@@ -15,6 +15,7 @@ class Peer(dc.DataChannel):
         self.ping_counter = 1
         self.pings = {}
         self.target = None
+        self.size = 1
     
     def onMessage(self, message):
         print("entering callback")
@@ -32,7 +33,7 @@ class Peer(dc.DataChannel):
             print(t2)
             print("round_trip_time = ", t2-t1)
             round_trip_time = t2-t1
-            # self.pings[int(m[1])] = round_trip_time
+            self.pings[int(m[1])] = round_trip_time
             # self.pings[int(m[1])].append(round_trip_time)
             print(self.pings)
                 
@@ -41,7 +42,7 @@ class Peer(dc.DataChannel):
 
     def onOpen(self, channel):
         if self.peer.role == 1 and self.target != None:
-            for i in range(1,40):
+            for i in range(1,3):
                 ping_count = i
                 self.ping(self.target, ping_count)
 
@@ -52,7 +53,7 @@ class Peer(dc.DataChannel):
                               
     def ping(self, recipient, ping_count):
         t1 = time.time()
-        self.send_message("ping {} {} {}".format(ping_count, t1, self.dcName))
+        self.send_message("ping {} {} {} ".format(ping_count, t1, self.dcName)*int(self.size))
         # self.pings[ping_count] = []
         # self.pings[ping_count].append(t1)
 
@@ -76,6 +77,7 @@ def time_out(timeout):
         
 
 if __name__ =="__main__":
+    size = input("Enter the size of the ping in multiples of 65 chars > ")
     a = Peer(dcName=uuid.uuid1().hex, send_ping = True)
     b = Peer(dcName=uuid.uuid1().hex)
     a.target = b
@@ -90,6 +92,18 @@ def init ():
     b.register_peer()
     perform_handshake(a, b)
     return a,b
+
+def diff_env():
+    a = Peer(dcName=uuid.uudi1().hex)
+    print(a.dcName)
+    peer2 = input("Enter the uuid of the peer you want to talk to > ")
+    get_target2 = requests.get("http://127.0.0.1:5000/request", params = {'uuid': peer2})
+    dict_peer2 = get_target2.json()
+    new_offer_sdp = a.parse_offer_sdp(dict_peer2['sdp'])
+    print(new_offer_sdp)
+    new_sdp = input("Enter new offer SDP >")
+    
+    
 
     
 
