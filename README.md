@@ -1,6 +1,7 @@
 ## Instructions
 
-- Compile the C part. `cd ../src` and then `make`.
+- After cloning, do `git submodule init` and `git submodule update` to pull the libnice submodule.
+- Compile the C part. `cd ../src` and then `make` or run the dockerfile.
 - Set the env variable: `export LD_LIBRARY_PATH=../src/vendor/build`
 - Make a python3 virtualenv, activate it and `pip install cffi` there.
 - Run `python ./setup.py install` from python folder to install the library. 
