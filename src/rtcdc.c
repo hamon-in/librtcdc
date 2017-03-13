@@ -119,7 +119,6 @@ rtcdc_create_peer_connection(rtcdc_on_channel_cb on_channel,
           freeaddrinfo(servinfo);
         return NULL;
       }
-    
 
     struct sockaddr_in *sa = (struct sockaddr_in *)servinfo->ai_addr;
     inet_ntop(AF_INET, &(sa->sin_addr), buf, INET_ADDRSTRLEN);

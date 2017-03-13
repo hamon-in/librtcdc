@@ -5,7 +5,7 @@
 CFLAGS+=-Wall -Wl,--no-as-needed -g -O3 -DINET -DINET6 -DDEBUG_SCTP -fPIC -Wno-deprecated `pkg-config --cflags openssl` -pthread `pkg-config --cflags glib-2.0` -I./libnice/nice -I./libnice/agent -I/usr/include/gupnp-igd-1.0 -I/usr/include/gupnp-1.0 -I/usr/include/gssdp-1.0 -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/usr/include/uuid -I usrsctp/usrsctplib -std=gnu11 
 
 LDFLAGS+=`pkg-config --libs openssl glib-2.0` -L ./vendor/build -lnice -lgio-2.0 -lgobject-2.0 -lusrsctp -lpthread 
-SOURCES=util.c dtls.c sctp.c ice.c sdp.c dcep.c rtcdc.c
+SOURCES=util.c dtls.c sctp.c ice.c sdp.c dcep.c rtcdc.c handshake.c
 OBJECTS=$(SOURCES:.c=.o)
 NAME=rtcdc
 
@@ -54,6 +54,9 @@ main: finaldeps
 
 localhost: finaldeps
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) localhost.c -o localhost
+
+startest: finaldeps
+	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) startest.c -o startest
 
 $(TARGET): $(OBJECTS) deps
 	$(CC) $(CFLAGS) -shared -fPIC $(LDFLAGS) $(OBJECTS) -o $@
