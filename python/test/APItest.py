@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from time import sleep
 
 def test_star():
-    from rtcdc import Peer
+    from ..rtcdc import Peer
     on_message = Mock()
 
     peerA = Peer(on_message = None)
