@@ -1,24 +1,31 @@
 import pytest
-from unittest.mock import Mock
 from time import sleep
+from ..rtcdc import Peer, ConnectionError, SignalHandler, SignalError
+import uuid
+import requests
 
-def test_star():
-    from ..rtcdc import Peer, connection_error
-    on_message = Mock()
+class OurHTTPSignalHandler(SignalHandler):
+    def register(self, uid, sdp, candidate):
+        requests.put(args.sigServer + "/register", data = {'sdp': sdp, 'uuid': uuid.hex, 'cand': cand})
+    def request(self, t_uid):
+        get_target = requests.get(args.sigServer + "/request", params = {'uuid': target_uuid })
+        try:
+            target = get_target.json()
+        except ValueError:
+            raise SignalError("Could not find {}".format(t_uid))
+        return (target["sdp"], target["candidate"])
 
-    peerA = Peer()
-    peerB = Peer()
-    peerC = Peer(on_message = on_message)
 
-    peerA.connect(peerB)
-    peerA.connect(peerC)
+def test_star_local():
+    peerA = Peer(uid="xyz", OurHTTPSignalHandler)
+    peerB = Peer(uid="123", OurHTTPSignalHandler)
+    peerC = Peer(uid="abc", OurHTTPSignalHandler)
+
+    peerA.connect("123")
+    peerA.connect("abc")
 
     try:
         peerA.send_message(peerC, "message")
-        print("Waiting 5 seconds just to be safe")
-        sleep(5)
-        on_message.assert_called_with(msg == "message")
-    except connection_error as e:
+        assert peerC.get_message() == "message"
+    except ConnectionError as e:
         print(e.message)
-
-    
