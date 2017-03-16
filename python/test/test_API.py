@@ -25,7 +25,7 @@ def test_star_local():
     nodeA.connect("abc")
 
     try:
-        nodeA.send_message(nodeC, "message")
+        nodeA.send_message("abc", "message")
         assert nodeC.get_message() == "message"
     except ConnectionError as e:
         print(e.message)
