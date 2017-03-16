@@ -1,6 +1,6 @@
 import pytest
 from time import sleep
-from ..rtcdc import Peer, ConnectionError, SignalHandler, SignalError
+from ..rtcdc import Node, ConnectionError, SignalHandler, SignalError
 import uuid
 import requests
 
@@ -17,15 +17,15 @@ class OurHTTPSignalHandler(SignalHandler):
 
 
 def test_star_local():
-    peerA = Peer(uid="xyz", OurHTTPSignalHandler)
-    peerB = Peer(uid="123", OurHTTPSignalHandler)
-    peerC = Peer(uid="abc", OurHTTPSignalHandler)
+    nodeA = Node(uid="xyz", OurHTTPSignalHandler)
+    nodeB = Node(uid="123", OurHTTPSignalHandler)
+    nodeC = Node(uid="abc", OurHTTPSignalHandler)
 
-    peerA.connect("123")
-    peerA.connect("abc")
+    nodeA.connect("123")
+    nodeA.connect("abc")
 
     try:
-        peerA.send_message(peerC, "message")
-        assert peerC.get_message() == "message"
+        nodeA.send_message(nodeC, "message")
+        assert nodeC.get_message() == "message"
     except ConnectionError as e:
         print(e.message)
