@@ -9,6 +9,7 @@
 #include "sctp.h"
 #include "dcep.h"
 #include "rtcdc.h"
+#include <errno.h>
 
 static int g_sctp_ref = 0;
 
@@ -279,6 +280,7 @@ send_sctp_message(struct sctp_transport *sctp,
                       &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
       fprintf(stderr, "sending SCTP message failed\n");
+      printf("errno reason: %s", strerror(errno));
 #endif
       return -1;
     }
