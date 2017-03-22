@@ -1,0 +1,3 @@
+[submodule "src/usrsctp"]
+	path = src/usrsctp
+	url = https://github.com/sctplab/usrsctp
