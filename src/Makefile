@@ -2,7 +2,7 @@
 # Copyright (c) 2015 Xiaohan Song <chef@dark.kitchen>
 # This file is licensed under a BSD license.
 
-CFLAGS+=-Wall -Wl,--no-as-needed -g -O3 -DINET -DINET6 -DDEBUG_SCTP -fPIC -Wno-deprecated `pkg-config --cflags openssl` -pthread `pkg-config --cflags glib-2.0` -I./libnice/nice -I./libnice/agent -I/usr/include/gupnp-igd-1.0 -I/usr/include/gupnp-1.0 -I/usr/include/gssdp-1.0 -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/usr/include/uuid -I usrsctp/usrsctplib -std=gnu11 
+CFLAGS+=-pg -Wall -Wl,--no-as-needed -g -DINET -DINET6 -DDEBUG_SCTP -fPIC -Wno-deprecated `pkg-config --cflags openssl` -pthread `pkg-config --cflags glib-2.0` -I./libnice/nice -I./libnice/agent -I/usr/include/gupnp-igd-1.0 -I/usr/include/gupnp-1.0 -I/usr/include/gssdp-1.0 -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/usr/include/uuid -I usrsctp/usrsctplib -std=gnu11
 
 LDFLAGS+=`pkg-config --libs openssl glib-2.0` -L ./vendor/build -lnice -lgio-2.0 -lgobject-2.0 -lusrsctp -lpthread 
 SOURCES=util.c dtls.c sctp.c ice.c sdp.c dcep.c rtcdc.c handshake.c
@@ -52,8 +52,8 @@ $(LIB_NICE):
 main: finaldeps 
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
 
-localhost: finaldeps
-	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) localhost.c -o localhost
+test_message: finaldeps
+	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) test_message.c -o test_message
 
 startest: finaldeps
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) startest.c -o startest
