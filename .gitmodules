@@ -1,3 +1,6 @@
 [submodule "src/libnice"]
 	path = src/libnice
 	url = https://github.com/libnice/libnice.git
+[submodule "src/usrsctp"]
+	path = src/usrsctp
+	url = https://github.com/sctplab/usrsctp
