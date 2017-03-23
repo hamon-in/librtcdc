@@ -264,6 +264,7 @@ send_sctp_message(struct sctp_transport *sctp,
       info.snd_ppid = htonl(m->ppid);
       int retry_count = 0;
       while(1) {
+          usleep(3000); //3ms
           if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
                             &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
@@ -277,7 +278,6 @@ send_sctp_message(struct sctp_transport *sctp,
           #ifdef DEBUG_SCTP
           fprintf(stderr, "Retrying packet %d times\n", retry_count);
           #endif
-          usleep(3000); //3ms
       }
       free(m);
     }
@@ -289,6 +289,7 @@ send_sctp_message(struct sctp_transport *sctp,
     info.snd_ppid = htonl(ppid);
     int retry_count = 0;
     while(1) {
+        usleep(3000); //3ms
         if (usrsctp_sendv(sctp->sock, data, len, NULL, 0,
                           &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
@@ -303,7 +304,6 @@ send_sctp_message(struct sctp_transport *sctp,
         #ifdef DEBUG_SCTP
         fprintf(stderr, "Retrying packet %d times\n", retry_count);
         #endif
-        usleep(3000); //3ms
     }
     return 0;
   }
