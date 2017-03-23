@@ -342,7 +342,7 @@ rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel)
   channel = NULL;
 }
 
-int
+void
 rtcdc_send_message(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len)
 {
   if (channel == NULL)
@@ -362,7 +362,7 @@ rtcdc_send_message(struct rtcdc_data_channel *channel, int datatype, void *data,
   } else
     return -1;
 
-  return send_sctp_message(channel->sctp, data, len, channel->sid, ppid);
+  queue_sctp_message(channel->sctp, data, len, channel->sid, ppid);
 }
 
 static gpointer

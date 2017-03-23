@@ -123,7 +123,7 @@ rtcdc_create_data_channel(struct rtcdc_peer_connection *peer,
 void
 rtcdc_destroy_data_channel(struct rtcdc_data_channel *channel);
 
-int
+void
 rtcdc_send_message(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len);
 
 void

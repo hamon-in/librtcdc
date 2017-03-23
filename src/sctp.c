@@ -10,6 +10,7 @@
 #include "dcep.h"
 #include "rtcdc.h"
 #include <errno.h>
+#include <unistd.h>
 
 static int g_sctp_ref = 0;
 
@@ -247,6 +248,40 @@ sctp_thread(gpointer user_data)
   return NULL;
 }
 
+void 
+queue_sctp_message(struct sctp_transport *sctp,
+                  void *data, size_t len, uint16_t sid, uint32_t ppid)
+{
+    struct sctp_message *m;
+    //flush the queue
+    while ((m = (struct sctp_message *)g_async_queue_try_pop(sctp->deferred_messages))) {
+      struct sctp_sndinfo info;
+      memset(&info, 0, sizeof info);
+      info.snd_sid = m->sid;
+      info.snd_flags = SCTP_EOR;
+      info.snd_ppid = htonl(m->ppid);
+      if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
+                        &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
+#ifdef DEBUG_SCTP
+        fprintf(stderr, "sending deferred SCTP message failed\n");
+#endif
+      }
+      usleep(m->len * 1000);
+      free(m);
+    }
+    // add to queue
+  struct sctp_message *msg = (struct sctp_message *)calloc(1, sizeof *msg);
+  if (msg == NULL)
+    return;
+
+  msg->data = data;
+  msg->len = len;
+  msg->sid = sid;
+  msg->ppid = ppid;
+  g_async_queue_push(sctp->deferred_messages, msg);
+
+}
+
 int
 send_sctp_message(struct sctp_transport *sctp,
                   void *data, size_t len, uint16_t sid, uint32_t ppid)
@@ -270,7 +305,6 @@ send_sctp_message(struct sctp_transport *sctp,
       }
       free(m);
     }
-
     struct sctp_sndinfo info;
     memset(&info, 0, sizeof info);
     info.snd_sid = sid;
