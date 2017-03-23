@@ -10,6 +10,7 @@
 #include "dcep.h"
 #include "rtcdc.h"
 #include <errno.h>
+#define SOCKDELAY 15
 
 static int g_sctp_ref = 0;
 
@@ -264,7 +265,10 @@ send_sctp_message(struct sctp_transport *sctp,
       info.snd_ppid = htonl(m->ppid);
       int retry_count = 0;
       while(1) {
-          usleep(3000); //3ms
+          #ifdef DEBUG_SCTP
+          fprintf(stderr, "\nWaiting %zu microseconds\n", m->len * SOCKDELAY);
+          #endif
+          usleep(m->len * SOCKDELAY);
           if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
                             &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
@@ -289,7 +293,10 @@ send_sctp_message(struct sctp_transport *sctp,
     info.snd_ppid = htonl(ppid);
     int retry_count = 0;
     while(1) {
-        usleep(3000); //3ms
+        #ifdef DEBUG_SCTP
+        fprintf(stderr, "\nWaiting %zu microseconds\n", len * SOCKDELAY);
+        #endif
+        usleep(len * SOCKDELAY);
         if (usrsctp_sendv(sctp->sock, data, len, NULL, 0,
                           &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
