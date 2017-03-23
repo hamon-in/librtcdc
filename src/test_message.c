@@ -102,8 +102,8 @@ int main() {
             if (dc_open == 1) {
                 channel = rtcdc_pc->channels[0];
                 if (channel->state > RTCDC_CHANNEL_STATE_CLOSED) {
-                    //gchar* message = "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest\0";
-                    gchar* message = "test\0";
+                    gchar* message = "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest\0";
+                    //gchar* message = "test\0";
                     count1 += 1;
                     printf("%d\n", count1);
                     rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message) + 1);

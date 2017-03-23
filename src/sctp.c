@@ -260,13 +260,19 @@ queue_sctp_message(struct sctp_transport *sctp,
       info.snd_sid = m->sid;
       info.snd_flags = SCTP_EOR;
       info.snd_ppid = htonl(m->ppid);
+      while (1) {
+          printf("\nRetrying..\n");
+          usleep(3000);
       if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
                         &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
-#ifdef DEBUG_SCTP
+        #ifdef DEBUG_SCTP
         fprintf(stderr, "sending deferred SCTP message failed\n");
 #endif
+      } else {
+        break;
       }
-      usleep(m->len * 1000);
+      }
+      //usleep(m->len * 1000);
       free(m);
     }
     // add to queue
