@@ -48,9 +48,6 @@ destroy_sctp_transport(struct sctp_transport *sctp);
 int
 send_sctp_message(struct sctp_transport *sctp,
                   void *data, size_t len, uint16_t sid, uint32_t ppid);
-void
-queue_sctp_message(struct sctp_transport *sctp,
-                  void *data, size_t len, uint16_t sid, uint32_t ppid);
 
 gpointer
 sctp_thread(gpointer peer);

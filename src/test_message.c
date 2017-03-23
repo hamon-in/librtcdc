@@ -19,7 +19,6 @@ int main() {
     void onmessage(struct rtcdc_data_channel *channel, int datatype, void *data, size_t len, void *user_data) {
         received_count += 1;
         printf("\nData received: %s. Count: %d\n", (char *) data, received_count);
-        //sleep(1);
     }
     void onopen(struct rtcdc_data_channel *channel, void *user_data) {
         printf("\nDataChannel opened.\n");
@@ -107,25 +106,10 @@ int main() {
                     count1 += 1;
                     printf("%d\n", count1);
                     rtcdc_send_message(channel, RTCDC_DATATYPE_STRING, message, strlen(message) + 1);
-                    /*
-                    char *q_message = "quit\n";
-                    if (strcmp((char *)message, (char *)q_message) == 0)
-                      {
-                        printf("Quit Recieved");
-                        g_free(message);
-                        g_free(dec_remote_sdp_offer);
-                        g_free(dec_remote_candidate);
-                        free(user_data);
-                        rtcdc_destroy_peer_connection(rtcdc_pc);
-                        break;
-                      }
-                      */
-                    //g_free(message);
                 }
             }
         }
         usleep(2 * 1000); //atleast some sleep needed or it segfaults
     }
-    //pthread_join(tid, NULL);
     return 0;
 }
