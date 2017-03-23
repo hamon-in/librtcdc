@@ -272,7 +272,6 @@ queue_sctp_message(struct sctp_transport *sctp,
         break;
       }
       }
-      //usleep(m->len * 1000);
       free(m);
     }
     // add to queue
@@ -303,11 +302,22 @@ send_sctp_message(struct sctp_transport *sctp,
       info.snd_sid = m->sid;
       info.snd_flags = SCTP_EOR;
       info.snd_ppid = htonl(m->ppid);
-      if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
-                        &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
+      int retry_count = 0;
+      while(1) {
+          if (usrsctp_sendv(sctp->sock, m->data, m->len, NULL, 0,
+                            &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
-        fprintf(stderr, "sending deferred SCTP message failed\n");
+            fprintf(stderr, "sending deferred SCTP message failed\n");
 #endif
+          } else {
+            // success
+            break;
+          }
+          retry_count += 1;
+          #ifdef DEBUG_SCTP
+          fprintf(stderr, "Retrying packet %d times\n", retry_count);
+          #endif
+          usleep(3000); //3ms
       }
       free(m);
     }
@@ -316,15 +326,24 @@ send_sctp_message(struct sctp_transport *sctp,
     info.snd_sid = sid;
     info.snd_flags = SCTP_EOR;
     info.snd_ppid = htonl(ppid);
-    if (usrsctp_sendv(sctp->sock, data, len, NULL, 0,
-                      &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
+    int retry_count = 0;
+    while(1) {
+        if (usrsctp_sendv(sctp->sock, data, len, NULL, 0,
+                          &info, sizeof info, SCTP_SENDV_SNDINFO, 0) < 0) {
 #ifdef DEBUG_SCTP
-      fprintf(stderr, "sending SCTP message failed\n");
-      printf("errno reason: %s", strerror(errno));
+          fprintf(stderr, "sending SCTP message failed\n");
+          printf("errno reason: %s", strerror(errno));
 #endif
-      return -1;
+          return -1;
+        } else {
+          break;
+        }
+        retry_count += 1;
+        #ifdef DEBUG_SCTP
+        fprintf(stderr, "Retrying packet %d times\n", retry_count);
+        #endif
+        usleep(3000); //3ms
     }
-
     return 0;
   }
 
