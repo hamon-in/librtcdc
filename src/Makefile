@@ -58,7 +58,7 @@ $(TARGET): $(OBJECTS) deps
 clean:
 	rm -Rf vendor
 	rm *.dylib ! $(LIB_USRSCTP)
-	rm -f *.o *.so *.dylib *.a example  && cd usrsctp && make clean && cd ..
+	rm -f *.o *.so *.dylib *.a example && cd usrsctp && make clean && cd ..
 
 test: main
 	LD_LIBRARY_PATH=vendor/build/ ./main
