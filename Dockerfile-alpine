@@ -1,0 +1,11 @@
+FROM arm32v6/alpine:latest
+RUN apk update
+RUN apk add gcc libc-dev
+RUN apk add openssl-dev glib-dev
+RUN apk add libtool m4
+RUN apk add automake autoconf
+RUN apk add libnice-dev
+RUN apk add make
+ADD ./ /librtcdc
+WORKDIR /librtcdc/
+RUN cd /librtcdc/src && make
