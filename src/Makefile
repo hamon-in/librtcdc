@@ -24,27 +24,27 @@ all:  $(SOURCES) $(TARGET) main
 
 LIB_USRSCTP = usrsctp/.built
 LIB_USRSCTP_DIR = ./usrsctp/usrsctplib
-LIB_NICE = libnice/.built
-LIB_NICE_DIR = ./libnice/nice
+# LIB_NICE = libnice/.built
+# LIB_NICE_DIR = ./libnice/nice
 
-deps: $(LIB_USRSCTP) $(LIB_NICE)
+deps: $(LIB_USRSCTP)
 	rm -Rf vendor
 	mkdir -p vendor/build
 	cp -r $(LIB_USRSCTP_DIR)/.libs/* vendor/build
-	cp -r $(LIB_NICE_DIR)/.libs/* vendor/build
+	#cp -r $(LIB_NICE_DIR)/.libs/* vendor/build
 	cp $(LIB_USRSCTP_DIR)/libusrsctp.la vendor
-	cp $(LIB_NICE_DIR)/libnice.la vendor
+	#cp $(LIB_NICE_DIR)/libnice.la vendor
 
 finaldeps: $(TARGET)
 	cp $(TARGET) vendor/build
 
 $(LIB_USRSCTP): 
-	cd usrsctp && ./bootstrap && env -u CFLAGS  ./configure && make
+	cd usrsctp && ./bootstrap && env -u CFLAGS ./configure && make
 	touch usrsctp/.built
 
-$(LIB_NICE): 
-	cd libnice && env -u CFLAGS ./autogen.sh && env -u CFLAGS ./configure && make 
-	touch libnice/.built
+#$(LIB_NICE):
+#	cd libnice && ./autogen.sh && env -u CFLAGS ./configure && make
+#	touch libnice/.built
 
 main: finaldeps 
 	$(CC) $(CFLAGS) -I ./ $(LDFLAGS) $(TARGET) main.c -o main
@@ -57,7 +57,7 @@ $(TARGET): $(OBJECTS) deps
 
 clean:
 	rm -Rf vendor
-	rm $(LIB_NICE) $(LIB_USRSCTP)
+	rm *.dylib ! $(LIB_USRSCTP)
 	rm -f *.o *.so *.dylib *.a example  && cd usrsctp && make clean && cd ..
 
 test: main
