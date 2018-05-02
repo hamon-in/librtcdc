@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 307779 2016-10-22 17:21:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 310590 2016-12-26 11:06:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -824,10 +826,6 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 
 	if ((int)space_needed > (((mbuf_threshold - 1) * MLEN) + MHLEN)) {
 		MCLGET(m, how);
-		if (m == NULL) {
-			return (NULL);
-		}
-
 		if (SCTP_BUF_IS_EXTENDED(m) == 0) {
 			sctp_m_freem(m);
 			return (NULL);

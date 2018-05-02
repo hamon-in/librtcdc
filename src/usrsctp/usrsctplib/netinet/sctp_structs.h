@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 303792 2016-08-06 12:33:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 325370 2017-11-03 20:46:12Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -248,6 +250,9 @@ struct sctp_net_route {
 #endif
 #endif
 #if defined(__APPLE__)
+#if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+	struct llentry	*ro_lle;
+#endif
 #if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION)
 	struct ifaddr *ro_srcia;
 #endif
@@ -446,10 +451,10 @@ struct sctp_nets {
 
 
 struct sctp_data_chunkrec {
-	uint32_t TSN_seq;	/* the TSN of this transmit */
-	uint32_t stream_seq;	/* the stream sequence number of this transmit */
-	uint16_t stream_number;	/* the stream number of this guy */
-	uint32_t payloadtype;
+	uint32_t tsn;		/* the TSN of this transmit */
+	uint32_t mid;		/* the message identifier of this transmit */
+	uint16_t sid;		/* the stream number of this guy */
+	uint32_t ppid;
 	uint32_t context;	/* from send */
 	uint32_t cwnd_at_send;
 	/*
@@ -458,7 +463,7 @@ struct sctp_data_chunkrec {
 	 */
 	uint32_t fast_retran_tsn;	/* sending_seq at the time of FR */
 	struct timeval timetodrop;	/* time we drop it from queue */
-	uint32_t fsn_num;		/* Fragment Sequence Number */
+	uint32_t fsn;			/* Fragment Sequence Number */
 	uint8_t doing_fast_retransmit;
 	uint8_t rcv_flags;	/* flags pulled from data chunk on inbound for
 				 * outbound holds sending flags for PR-SCTP.
@@ -513,7 +518,6 @@ struct sctp_tmit_chunk {
 
 struct sctp_queued_to_read {	/* sinfo structure Pluse more */
 	uint16_t sinfo_stream;	/* off the wire */
-	uint32_t sinfo_ssn;	/* off the wire */
 	uint16_t sinfo_flags;	/* SCTP_UNORDERED from wire use SCTP_EOF for
 				 * EOR */
 	uint32_t sinfo_ppid;	/* off the wire */
@@ -523,7 +527,7 @@ struct sctp_queued_to_read {	/* sinfo structure Pluse more */
 	uint32_t sinfo_cumtsn;	/* Use this in reassembly as last TSN */
 	sctp_assoc_t sinfo_assoc_id;	/* our assoc id */
 	/* Non sinfo stuff */
-	uint32_t msg_id;	/* Fragment Index */
+	uint32_t mid;		/* Fragment Index */
 	uint32_t length;	/* length of data */
 	uint32_t held_length;	/* length held in sb */
 	uint32_t top_fsn;	/* Highest FSN in queue */
@@ -584,7 +588,7 @@ struct sctp_stream_queue_pending {
 	uint32_t ppid;
 	uint32_t context;
 	uint16_t sinfo_flags;
-	uint16_t stream;
+	uint16_t sid;
 	uint16_t act_flags;
 	uint16_t auth_keyid;
 	uint8_t  holds_key_ref;
@@ -603,8 +607,8 @@ TAILQ_HEAD(sctpwheelunrel_listhead, sctp_stream_in);
 struct sctp_stream_in {
 	struct sctp_readhead inqueue;
 	struct sctp_readhead uno_inqueue;
-	uint32_t last_sequence_delivered;	/* used for re-order */
-	uint16_t stream_no;
+	uint32_t last_mid_delivered;	/* used for re-order */
+	uint16_t sid;
 	uint8_t  delivery_started;
 	uint8_t  pd_api_started;
 };
@@ -686,7 +690,7 @@ struct sctp_stream_out {
 	 */
 	uint32_t next_mid_ordered;
 	uint32_t next_mid_unordered;
-	uint16_t stream_no;
+	uint16_t sid;
 	uint8_t last_msg_incomplete;
 	uint8_t state;
 };
@@ -1156,6 +1160,7 @@ struct sctp_association {
 	uint32_t chunks_on_out_queue;	/* total chunks floating around,
 					 * locked by send socket buffer */
 	uint32_t peers_adaptation;
+	uint32_t default_mtu;
 	uint16_t peer_hmac_id;	/* peer HMAC id to send */
 
 	/*

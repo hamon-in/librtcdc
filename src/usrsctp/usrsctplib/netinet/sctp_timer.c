@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 299273 2016-05-09 16:35:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 317592 2017-04-29 09:57:27Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -429,17 +431,17 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 
 	asoc = &stcb->asoc;
 	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
-		if (SCTP_TSN_GE(asoc->last_acked_seq, chk->rec.data.TSN_seq)) {
+		if (SCTP_TSN_GE(asoc->last_acked_seq, chk->rec.data.tsn)) {
 			SCTP_PRINTF("Found chk:%p tsn:%x <= last_acked_seq:%x\n",
-			            (void *)chk, chk->rec.data.TSN_seq, asoc->last_acked_seq);
+			            (void *)chk, chk->rec.data.tsn, asoc->last_acked_seq);
 			if (chk->sent != SCTP_DATAGRAM_NR_ACKED) {
-				if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
-					asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
+				if (asoc->strmout[chk->rec.data.sid].chunks_on_queues > 0) {
+					asoc->strmout[chk->rec.data.sid].chunks_on_queues--;
 				}
 			}
-			if ((asoc->strmout[chk->rec.data.stream_number].chunks_on_queues == 0) &&
-			    (asoc->strmout[chk->rec.data.stream_number].state == SCTP_STREAM_RESET_PENDING) &&
-			    TAILQ_EMPTY(&asoc->strmout[chk->rec.data.stream_number].outqueue)) {
+			if ((asoc->strmout[chk->rec.data.sid].chunks_on_queues == 0) &&
+			    (asoc->strmout[chk->rec.data.sid].state == SCTP_STREAM_RESET_PENDING) &&
+			    TAILQ_EMPTY(&asoc->strmout[chk->rec.data.sid].outqueue)) {
 				asoc->trigger_reset = 1;
 			}
 			TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
@@ -462,7 +464,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 	}
 	SCTP_PRINTF("after recover order is as follows\n");
 	TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
-		SCTP_PRINTF("chk:%p TSN:%x\n", (void *)chk, chk->rec.data.TSN_seq);
+		SCTP_PRINTF("chk:%p TSN:%x\n", (void *)chk, chk->rec.data.tsn);
 	}
 }
 #endif
@@ -550,10 +552,10 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
  start_again:
 #endif
 	TAILQ_FOREACH_SAFE(chk, &stcb->asoc.sent_queue, sctp_next, nchk) {
-		if (SCTP_TSN_GE(stcb->asoc.last_acked_seq, chk->rec.data.TSN_seq)) {
+		if (SCTP_TSN_GE(stcb->asoc.last_acked_seq, chk->rec.data.tsn)) {
 			/* Strange case our list got out of order? */
 			SCTP_PRINTF("Our list is out of order? last_acked:%x chk:%x\n",
-			            (unsigned int)stcb->asoc.last_acked_seq, (unsigned int)chk->rec.data.TSN_seq);
+			            (unsigned int)stcb->asoc.last_acked_seq, (unsigned int)chk->rec.data.tsn);
 			recovery_cnt++;
 #ifdef INVARIANTS
 			panic("last acked >= chk on sent-Q");
@@ -578,7 +580,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 
 			/* validate its been outstanding long enough */
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
-				sctp_log_fr(chk->rec.data.TSN_seq,
+				sctp_log_fr(chk->rec.data.tsn,
 					    chk->sent_rcv_time.tv_sec,
 					    chk->sent_rcv_time.tv_usec,
 					    SCTP_FR_T3_MARK_TIME);
@@ -646,11 +648,11 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				num_mk++;
 				if (fir == 0) {
 					fir = 1;
-					tsnfirst = chk->rec.data.TSN_seq;
+					tsnfirst = chk->rec.data.tsn;
 				}
-				tsnlast = chk->rec.data.TSN_seq;
+				tsnlast = chk->rec.data.tsn;
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
-					sctp_log_fr(chk->rec.data.TSN_seq, chk->snd_count,
+					sctp_log_fr(chk->rec.data.tsn, chk->snd_count,
 						    0, SCTP_FR_T3_MARKED);
 				}
 
@@ -666,7 +668,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 						       chk->whoTo->flight_size,
 						       chk->book_size,
 						       (uint32_t)(uintptr_t)chk->whoTo,
-						       chk->rec.data.TSN_seq);
+						       chk->rec.data.tsn);
 				}
 				sctp_flight_size_decrease(chk);
 				sctp_total_flight_decrease(stcb, chk);
@@ -674,6 +676,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				stcb->asoc.peers_rwnd += SCTP_BASE_SYSCTL(sctp_peer_chunk_oh);
 			}
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 			SCTP_STAT_INCR(sctps_markedretrans);
 
 			/* reset the TSN for striking and other FR stuff */
@@ -696,7 +699,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				if (TAILQ_EMPTY(&stcb->asoc.send_queue)) {
 					chk->rec.data.fast_retran_tsn = stcb->asoc.sending_seq;
 				} else {
-					chk->rec.data.fast_retran_tsn = (TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.TSN_seq;
+					chk->rec.data.fast_retran_tsn = (TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.tsn;
 				}
 			}
 			/* CMT: Do not allow FRs on retransmitted TSNs.
@@ -726,13 +729,9 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	if (num_mk) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
 			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%ld\n",
-			num_mk, (u_long)stcb->asoc.peers_rwnd);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
-			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%d\n",
+		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%u\n",
 			num_mk,
-			(int)stcb->asoc.peers_rwnd);
+			stcb->asoc.peers_rwnd);
 	}
 #endif
 	*num_marked = num_mk;
@@ -751,6 +750,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			chk->whoTo = alt;
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				cnt_mk++;
 			}
@@ -794,7 +794,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 						       chk->whoTo->flight_size,
 						       chk->book_size,
 						       (uint32_t)(uintptr_t)chk->whoTo,
-						       chk->rec.data.TSN_seq);
+						       chk->rec.data.tsn);
 				}
 
 				sctp_flight_size_increase(chk);
@@ -1098,6 +1098,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	}
 	cookie->sent = SCTP_DATAGRAM_RESEND;
+	cookie->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 	/*
 	 * Now call the output routine to kick out the cookie again, Note we
 	 * don't mark any chunks for retran so that FR will need to kick in
@@ -1144,6 +1145,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			sctp_free_remote_addr(chk->whoTo);
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			}
 			chk->whoTo = alt;
@@ -1161,6 +1163,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (strrst->sent != SCTP_DATAGRAM_RESEND)
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	strrst->sent = SCTP_DATAGRAM_RESEND;
+	strrst->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 	/* restart the timer */
 	sctp_timer_start(SCTP_TIMER_TYPE_STRRESET, inp, stcb, strrst->whoTo);
@@ -1225,6 +1228,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				chk->whoTo = alt;
 				if (chk->sent != SCTP_DATAGRAM_RESEND) {
 					chk->sent = SCTP_DATAGRAM_RESEND;
+					chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 					sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				}
 				atomic_add_int(&alt->ref_count, 1);
@@ -1239,6 +1243,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			if (asconf->sent != SCTP_DATAGRAM_RESEND && chk->sent != SCTP_DATAGRAM_UNSENT)
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 		}
 		if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
 			/*
@@ -1251,6 +1256,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (asconf->sent != SCTP_DATAGRAM_RESEND)
 			sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 		asconf->sent = SCTP_DATAGRAM_RESEND;
+		asconf->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 		/* send another ASCONF if any and we can do */
 		sctp_send_asconf(stcb, alt, SCTP_ADDR_NOT_LOCKED);

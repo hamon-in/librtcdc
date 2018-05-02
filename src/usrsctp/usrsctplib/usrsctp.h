@@ -87,6 +87,25 @@ extern "C" {
 
 typedef uint32_t sctp_assoc_t;
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#pragma pack (push, 1)
+#define SCTP_PACKED
+#else
+#define SCTP_PACKED __attribute__((packed))
+#endif
+
+struct sctp_common_header {
+	uint16_t source_port;
+	uint16_t destination_port;
+	uint32_t verification_tag;
+	uint32_t crc32c;
+} SCTP_PACKED;
+
+#if defined(_WIN32) && defined(_MSC_VER)
+#pragma pack(pop)
+#endif
+#undef SCTP_PACKED
+
 #define AF_CONN 123
 /* The definition of struct sockaddr_conn MUST be in
  * tune with other sockaddr_* structures.
@@ -879,6 +898,13 @@ usrsctp_getsockopt(struct socket *so,
                    socklen_t *option_len);
 
 int
+usrsctp_opt_info(struct socket *so,
+                 sctp_assoc_t id,
+                 int opt,
+                 void *arg,
+                 socklen_t *size);
+
+int
 usrsctp_getpaddrs(struct socket *so,
                   sctp_assoc_t id,
                   struct sockaddr **raddrs);
@@ -991,6 +1017,15 @@ usrsctp_dumppacket(const void *, size_t, int);
 void
 usrsctp_freedumpbuffer(char *);
 
+void
+usrsctp_enable_crc32c_offload(void);
+
+void
+usrsctp_disable_crc32c_offload(void);
+
+uint32_t
+usrsctp_crc32c(void *, size_t);
+
 #define USRSCTP_SYSCTL_DECL(__field)                \
 void usrsctp_sysctl_set_ ## __field(uint32_t value);\
 uint32_t usrsctp_sysctl_get_ ## __field(void);
@@ -1006,9 +1041,7 @@ USRSCTP_SYSCTL_DECL(sctp_asconf_enable)
 USRSCTP_SYSCTL_DECL(sctp_reconfig_enable)
 USRSCTP_SYSCTL_DECL(sctp_nrsack_enable)
 USRSCTP_SYSCTL_DECL(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_DECL(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_DECL(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_DECL(sctp_max_burst_default)
 USRSCTP_SYSCTL_DECL(sctp_max_chunks_on_queue)
@@ -1121,7 +1154,7 @@ struct sctpstat {
 	uint32_t  sctps_recvauthfailed;      /* total number of auth failed */
 	uint32_t  sctps_recvexpress;         /* total fast path receives all one chunk */
 	uint32_t  sctps_recvexpressm;        /* total fast path multi-part data */
-	uint32_t  sctps_recvnocrc;
+	uint32_t  sctps_recv_spare;          /* formerly sctps_recvnocrc */
 	uint32_t  sctps_recvswcrc;
 	uint32_t  sctps_recvhwcrc;
 
@@ -1138,7 +1171,7 @@ struct sctpstat {
 	uint32_t  sctps_sendecne;            /* total output ECNE chunks    */
 	uint32_t  sctps_sendauth;            /* total output AUTH chunks FIXME   */
 	uint32_t  sctps_senderrors;          /* ip_output error counter */
-	uint32_t  sctps_sendnocrc;
+	uint32_t  sctps_send_spare;          /* formerly sctps_sendnocrc */
 	uint32_t  sctps_sendswcrc;
 	uint32_t  sctps_sendhwcrc;
 	/* PCKDROPREP statistics: */

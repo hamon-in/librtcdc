@@ -65,9 +65,11 @@ handle_packets(void *arg)
 #else
 	int *fdp;
 #endif
-	char *dump_buf;
+	char *dump_buffer;
+	struct sctp_common_header *hdr;
 	ssize_t length;
-	char buf[MAX_PACKET_SIZE];
+	char buffer[MAX_PACKET_SIZE];
+	uint32_t received_crc32c, computed_crc32c;
 
 #ifdef _WIN32
 	fdp = (SOCKET *)arg;
@@ -78,13 +80,27 @@ handle_packets(void *arg)
 #if defined(__NetBSD__)
 		pthread_testcancel();
 #endif
-		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
+		length = recv(*fdp, buffer, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
-			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buf);
-				usrsctp_freedumpbuffer(dump_buf);
+			if ((dump_buffer = usrsctp_dumppacket(buffer, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
+				//fprintf(stderr, "%s", dump_buffer);
+				usrsctp_freedumpbuffer(dump_buffer);
 			}
-			usrsctp_conninput(fdp, buf, (size_t)length, 0);
+			if ((size_t)length >= sizeof(struct sctp_common_header)) {
+				hdr = (struct sctp_common_header *)buffer;
+				received_crc32c = hdr->crc32c;
+				hdr->crc32c = htonl(0);
+				computed_crc32c = usrsctp_crc32c(buffer, (size_t)length);
+				hdr->crc32c = received_crc32c;
+				if (received_crc32c == computed_crc32c) {
+					usrsctp_conninput(fdp, buffer, (size_t)length, 0);
+				} else {
+					fprintf(stderr, "Wrong CRC32c: expected %08x received %08x\n",
+					        ntohl(computed_crc32c), ntohl(received_crc32c));
+				}
+			} else {
+				fprintf(stderr, "Packet too short: length %zu", (size_t)length);
+			}
 		}
 	}
 #ifdef _WIN32
@@ -95,9 +111,10 @@ handle_packets(void *arg)
 }
 
 static int
-conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)
 {
-	char *dump_buf;
+	char *dump_buffer;
+	struct sctp_common_header *hdr;
 #ifdef _WIN32
 	SOCKET *fdp;
 #else
@@ -109,15 +126,19 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 #else
 	fdp = (int *)addr;
 #endif
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		//fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
+	if (length >= sizeof(struct sctp_common_header)) {
+		hdr = (struct sctp_common_header *)buffer;
+		hdr->crc32c = usrsctp_crc32c(buffer, (size_t)length);
+	}
+	if ((dump_buffer = usrsctp_dumppacket(buffer, length, SCTP_DUMP_OUTBOUND)) != NULL) {
+		//fprintf(stderr, "%s", dump_buffer);
+		usrsctp_freedumpbuffer(dump_buffer);
 	}
 #ifdef _WIN32
-	if (send(*fdp, buf, (int)length, 0) == SOCKET_ERROR) {
+	if (send(*fdp, buffer, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
-	if (send(*fdp, buf, length, 0) < 0) {
+	if (send(*fdp, buffer, length, 0) < 0) {
 		return (errno);
 #endif
 	} else {
@@ -296,6 +317,7 @@ main(void)
 	}
 #endif
 	usrsctp_init(0, conn_output, debug_printf);
+	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
@@ -321,7 +343,7 @@ main(void)
 #ifdef HAVE_SIN_LEN
 	sin_c.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_c.sin_port = htons(9900);
+	sin_c.sin_port = htons(9899);
 	sin_c.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	memset(&sin_s, 0, sizeof(struct sockaddr_in));
 	sin_s.sin_family = AF_INET;
@@ -383,7 +405,7 @@ main(void)
 	};
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd_c);
@@ -399,7 +421,7 @@ main(void)
 		exit(EXIT_FAILURE);
 	}
 	printf("Change send socket buffer size from %d ", cur_buf_size);
-	snd_buf_size = 1<<22; /* 4 MB */
+	snd_buf_size = 1<<20; /* 1 MB */
 	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &snd_buf_size, sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt");
 		exit(EXIT_FAILURE);
@@ -489,13 +511,7 @@ main(void)
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-	/* Send a 1 MB ordered message */
-	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-		perror("usrsctp_sendv");
-		exit(EXIT_FAILURE);
-	}
-	/* Send a 1 MB ordered message */
+	/* Send a 1 MB message */
 	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");

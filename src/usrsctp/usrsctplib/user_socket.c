@@ -39,6 +39,7 @@
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_input.h>
 #include <netinet/sctp_peeloff.h>
+#include <netinet/sctp_crc32.h>
 #ifdef INET6
 #include <netinet6/sctp6_var.h>
 #endif
@@ -375,9 +376,7 @@ soisdisconnecting(struct socket *so)
  * timeo identifier.
  */
 void
-wakeup(ident, so)
-	void *ident;
-	struct socket *so;
+wakeup(void *ident, struct socket *so)
 {
 	SOCK_LOCK(so);
 #if defined (__Userspace_os_Windows)
@@ -395,8 +394,7 @@ wakeup(ident, so)
  * swapped out.
  */
 void
-wakeup_one(ident)
-	void *ident;
+wakeup_one(void *ident)
 {
 	/* __Userspace__ Check: We are using accept_cond for wakeup_one.
 	  It seems that wakeup_one is only called within
@@ -663,9 +661,9 @@ uiomove(void *cp, int n, struct uio *uio)
 
 		case UIO_SYSSPACE:
 			if (uio->uio_rw == UIO_READ)
-				bcopy(cp, iov->iov_base, cnt);
+				memcpy(iov->iov_base, cp, cnt);
 			else
-				bcopy(iov->iov_base, cp, cnt);
+				memcpy(cp, iov->iov_base, cnt);
 			break;
 		}
 		iov->iov_base = (char *)iov->iov_base + cnt;
@@ -682,10 +680,7 @@ out:
 
 /* Source: src/sys/kern/uipc_syscalls.c */
 int
-getsockaddr(namp, uaddr, len)
-	struct sockaddr **namp;
-	caddr_t uaddr;
-	size_t len;
+getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len)
 {
 	struct sockaddr *sa;
 	int error;
@@ -2435,6 +2430,121 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 }
 
 int
+usrsctp_opt_info(struct socket *so, sctp_assoc_t id, int opt, void *arg, socklen_t *size)
+{
+	if (arg == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	if ((id == SCTP_CURRENT_ASSOC) ||
+	    (id == SCTP_ALL_ASSOC)) {
+		errno = EINVAL;
+		return (-1);
+	}
+	switch (opt) {
+	case SCTP_RTOINFO:
+		((struct sctp_rtoinfo *)arg)->srto_assoc_id = id;
+		break;
+	case SCTP_ASSOCINFO:
+		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_SEND_PARAM:
+		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+		break;
+	case SCTP_PRIMARY_ADDR:
+		((struct sctp_setprim *)arg)->ssp_assoc_id = id;
+		break;
+	case SCTP_PEER_ADDR_PARAMS:
+		((struct sctp_paddrparams *)arg)->spp_assoc_id = id;
+		break;
+	case SCTP_MAXSEG:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_AUTH_KEY:
+		((struct sctp_authkey *)arg)->sca_assoc_id = id;
+		break;
+	case SCTP_AUTH_ACTIVE_KEY:
+		((struct sctp_authkeyid *)arg)->scact_assoc_id = id;
+		break;
+	case SCTP_DELAYED_SACK:
+		((struct sctp_sack_info *)arg)->sack_assoc_id = id;
+		break;
+	case SCTP_CONTEXT:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_STATUS:
+		((struct sctp_status *)arg)->sstat_assoc_id = id;
+		break;
+	case SCTP_GET_PEER_ADDR_INFO:
+		((struct sctp_paddrinfo *)arg)->spinfo_assoc_id = id;
+		break;
+	case SCTP_PEER_AUTH_CHUNKS:
+		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+		break;
+	case SCTP_LOCAL_AUTH_CHUNKS:
+		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+		break;
+	case SCTP_TIMEOUTS:
+		((struct sctp_timeouts *)arg)->stimo_assoc_id = id;
+		break;
+	case SCTP_EVENT:
+		((struct sctp_event *)arg)->se_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_SNDINFO:
+		((struct sctp_sndinfo *)arg)->snd_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_PRINFO:
+		((struct sctp_default_prinfo *)arg)->pr_assoc_id = id;
+		break;
+	case SCTP_PEER_ADDR_THLDS:
+		((struct sctp_paddrthlds *)arg)->spt_assoc_id = id;
+		break;
+	case SCTP_REMOTE_UDP_ENCAPS_PORT:
+		((struct sctp_udpencaps *)arg)->sue_assoc_id = id;
+		break;
+	case SCTP_ECN_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PR_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_AUTH_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_ASCONF_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_RECONFIG_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_NRSACK_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PKTDROP_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_MAX_BURST:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_ENABLE_STREAM_RESET:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PR_STREAM_STATUS:
+		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+		break;
+	case SCTP_PR_ASSOC_STATUS:
+		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+		break;
+	case SCTP_MAX_CWND:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	default:
+		break;
+	}
+	return (usrsctp_getsockopt(so, IPPROTO_SCTP, opt, arg, size));
+}
+
+int
 usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
 {
 	return (register_ulp_info(so, ulp_info));
@@ -2656,9 +2766,13 @@ usrsctp_connectx(struct socket *so,
 				return (-1);
 			}
 #endif
+			len += sizeof(struct sockaddr_in);
+			if (len > SCTP_STACK_BUF_SIZE) {
+				errno = ENOMEM;
+				return (-1);
+			}
 			memcpy(cpto, at, sizeof(struct sockaddr_in));
 			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
-			len += sizeof(struct sockaddr_in);
 			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in));
 			break;
 #endif
@@ -2672,18 +2786,30 @@ usrsctp_connectx(struct socket *so,
 #endif
 #ifdef INET
 			if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)at)->sin6_addr)) {
+				len += sizeof(struct sockaddr_in);
+				if (len > SCTP_STACK_BUF_SIZE) {
+					errno = ENOMEM;
+					return (-1);
+				}
 				in6_sin6_2_sin((struct sockaddr_in *)cpto, (struct sockaddr_in6 *)at);
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
-				len += sizeof(struct sockaddr_in);
 			} else {
+				len += sizeof(struct sockaddr_in6);
+				if (len > SCTP_STACK_BUF_SIZE) {
+					errno = ENOMEM;
+					return (-1);
+				}
 				memcpy(cpto, at, sizeof(struct sockaddr_in6));
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
-				len += sizeof(struct sockaddr_in6);
 			}
 #else
+			len += sizeof(struct sockaddr_in6);
+			if (len > SCTP_STACK_BUF_SIZE) {
+				errno = ENOMEM;
+				return (-1);
+			}
 			memcpy(cpto, at, sizeof(struct sockaddr_in6));
 			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
-			len += sizeof(struct sockaddr_in6);
 #endif
 			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in6));
 			break;
@@ -2692,17 +2818,7 @@ usrsctp_connectx(struct socket *so,
 			errno = EINVAL;
 			return (-1);
 		}
-		if (len > (sizeof(buf) - sizeof(int))) {
-			/* Never enough memory */
-			errno = E2BIG;
-			return (-1);
-		}
 		cnt++;
-	}
-	/* do we have any? */
-	if (cnt == 0) {
-		errno = EINVAL;
-		return (-1);
 	}
 	aa = (int *)buf;
 	*aa = cnt;
@@ -2897,7 +3013,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	struct sockaddr_in dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
-	int win_sent_len;
+	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
 	WSABUF winbuf;
 #else
@@ -3052,7 +3168,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	struct sockaddr_in6 dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
-	int win_sent_len;
+	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
 	WSABUF winbuf;
 #else
@@ -3307,6 +3423,29 @@ usrsctp_freedumpbuffer(char *buf)
 }
 
 void
+usrsctp_enable_crc32c_offload(void)
+{
+	SCTP_BASE_VAR(crc32c_offloaded) = 1;
+}
+
+void
+usrsctp_disable_crc32c_offload(void)
+{
+	SCTP_BASE_VAR(crc32c_offloaded) = 0;
+}
+
+/* Compute the CRC32C in network byte order */
+uint32_t
+usrsctp_crc32c(void *buffer, size_t length)
+{
+	uint32_t base = 0xffffffff;
+
+	base = calculate_crc32c(0xffffffff, (unsigned char *)buffer, (unsigned int) length);
+	base = sctp_finalize_crc32c(base);
+	return (base);
+}
+
+void
 usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
 {
 	struct sockaddr_conn src, dst;
@@ -3346,9 +3485,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
-	                             1,
-#endif
+	                             SCTP_BASE_VAR(crc32c_offloaded) == 1 ? 0 : 1,
 	                             ecn_bits,
 	                             SCTP_DEFAULT_VRFID, 0);
 	if (m) {
@@ -3374,9 +3511,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue)
@@ -3401,6 +3536,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_init_rtx_max_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_assoc_rtx_max_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_path_rtx_max_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_add_more_threshold)
+USRSCTP_SYSCTL_SET_DEF(sctp_nr_incoming_streams_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_nr_outgoing_streams_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_cmt_on_off)
 USRSCTP_SYSCTL_SET_DEF(sctp_cmt_use_dac)
@@ -3454,9 +3590,7 @@ USRSCTP_SYSCTL_GET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_GET_DEF(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_GET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_GET_DEF(sctp_max_burst_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_max_chunks_on_queue)
@@ -3481,6 +3615,7 @@ USRSCTP_SYSCTL_GET_DEF(sctp_init_rtx_max_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_assoc_rtx_max_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_path_rtx_max_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_add_more_threshold)
+USRSCTP_SYSCTL_GET_DEF(sctp_nr_incoming_streams_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_nr_outgoing_streams_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_cmt_on_off)
 USRSCTP_SYSCTL_GET_DEF(sctp_cmt_use_dac)

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2010-2012, by Michael Tuexen. All rights reserved.
  * Copyright (c) 2010-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2010-2012, by Robin Seggelmann. All rights reserved.
@@ -28,7 +30,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 303793 2016-08-06 12:51:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 326180 2017-11-24 19:38:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -272,9 +274,23 @@ sctp_ss_default_set_value(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_associa
 }
 
 static int
-sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc SCTP_UNUSED)
+sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc)
 {
-	return (0);
+	struct sctp_stream_out *strq;
+	struct sctp_stream_queue_pending *sp;
+
+	if (asoc->stream_queue_cnt != 1) {
+		return (0);
+	}
+	strq = asoc->ss_data.locked_on_sending;
+	if (strq == NULL) {
+		return (0);
+	}
+	sp = TAILQ_FIRST(&strq->outqueue);
+	if (sp == NULL) {
+		return (0);
+	}
+	return (!sp->msg_is_complete);
 }
 
 /*
@@ -298,7 +314,7 @@ sctp_ss_rr_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			TAILQ_INSERT_HEAD(&asoc->ss_data.out.wheel, strq, ss_params.rr.next_spoke);
 		} else {
 			strqt = TAILQ_FIRST(&asoc->ss_data.out.wheel);
-			while (strqt != NULL && (strqt->stream_no < strq->stream_no)) {
+			while (strqt != NULL && (strqt->sid < strq->sid)) {
 				strqt = TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
 			}
 			if (strqt != NULL) {
@@ -865,7 +881,7 @@ sctp_ss_fcfs_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 	sp = TAILQ_FIRST(&asoc->ss_data.out.list);
 default_again:
 	if (sp != NULL) {
-		strq = &asoc->strmout[sp->stream];
+		strq = &asoc->strmout[sp->sid];
 	} else {
 		strq = NULL;
 	}

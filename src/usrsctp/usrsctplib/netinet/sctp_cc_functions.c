@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 298942 2016-05-02 20:56:11Z pfg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 310590 2016-12-26 11:06:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -212,7 +214,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -225,7 +227,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,
@@ -1806,7 +1808,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -1819,7 +1821,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,
@@ -2333,7 +2335,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -2346,7 +2348,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,
