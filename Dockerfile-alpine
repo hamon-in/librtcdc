@@ -8,4 +8,5 @@ RUN apk add libnice-dev
 RUN apk add make
 ADD ./ /librtcdc
 WORKDIR /librtcdc/
+ENV LD_LIBRARY_PATH /librtcdc/src/vendor/build
 RUN cd /librtcdc/src && make
