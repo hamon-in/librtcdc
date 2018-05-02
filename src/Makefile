@@ -39,7 +39,7 @@ finaldeps: $(TARGET)
 	cp $(TARGET) vendor/build
 
 $(LIB_USRSCTP): 
-	cd usrsctp && ./bootstrap && env -u CFLAGS ./configure && make
+	cd usrsctp && ./bootstrap && ./configure && make
 	touch usrsctp/.built
 
 #$(LIB_NICE):
