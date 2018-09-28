@@ -87,10 +87,10 @@ class DataChannel():
     def __init__(self, dcName="test-dc", stunServer="stun.services.mozilla.com", port=3418, protocol=""):
         self._handle = ffi.new_handle(self)
         self.dc_open = False
-        self.dcName = bytes(dcName, "UTF-8")
-        self.protocol = bytes(protocol, "UTF-8")
+        self.dcName = bytes(dcName)
+        self.protocol = bytes(protocol)
         port = int(port)
-        self.peer = lib.rtcdc_create_peer_connection(lib.onchannel_cb, lib.oncandidate_cb, lib.onconnect_cb, bytes(stunServer, "UTF-8"), port, self._handle)
+        self.peer = lib.rtcdc_create_peer_connection(lib.onchannel_cb, lib.oncandidate_cb, lib.onconnect_cb, bytes(stunServer), port, self._handle)
         Thread(target=lib.rtcdc_loop, args=(self.peer, ),).start()
 
     def generate_offer_sdp(self):
@@ -127,7 +127,7 @@ class DataChannel():
         length_msg = len(message)
         if type(message) is str:
             datatype = RTCDC_DATATYPE_STRING
-            message = bytes(message, "UTF-8")
+            message = bytes(message)
         elif type(message) is bytes:
             datatype = RTCDC_DATATYPE_BINARY
         if (self.peer[0].initialized > 0):
@@ -138,3 +138,16 @@ class DataChannel():
                 return False
         else:
             return False
+
+    def destroy_peer_connection(self, peer):
+	if (self.peer.initialized > 0 and peer.initialized > 0):
+		lib.rtcdc_destroy_peer_connection(peer)
+		return True
+	return False
+
+    def destroy_data_channel(self, channel):
+	if (self.peer.initialized > 0):
+            if (self.dc_open == True and channel.state > RTCDC_CHANNEL_STATE_CLOSED):
+		lib.rtcdc_destroy_data_channel(channel)
+		return True
+	return False
